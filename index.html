@@ -5,22 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fpimentel Seguros CRM - Executive Edition</title>
     <!-- Chosen Palette: Navy Executive (Slate 950, Royal Blue 600, Success Emerald 500, Alert Amber 500, Rose 500) -->
-    <!-- Application Structure Plan: 
-        1. Unified State: Centralized React state for consistent data flow across Dashboard, Leads, Pipeline, and Finances.
-        2. Dashboard: Redesigned with 'Top Commissions' rankings and high-visibility KPIs.
-        3. Sales Funnel: Full Pipeline implementation including 'Lost' (Perdidos) column.
-        4. Financial Intelligence: Using Chart.js to visualize revenue streams and branch performance.
-        5. Admin Control: Robust configuration panel with safe error handling to prevent UI crashes.
-    -->
-    <!-- Visualization & Content Choices: 
-        - Performance: Bar chart for 'Commissions by Branch' in Finance tab.
-        - Strategic Insight: Doughnut chart on Dashboard for branch distribution.
-        - Urgency: Highlighted table for upcoming renewals.
-        - Personalization: Inclusion of family names in mock data for immediate context.
-        CONFIRMATION: No SVG/Mermaid used. Lucide icons via CDN.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -38,14 +22,15 @@
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .top-rank-badge { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
     </style>
 </head>
 <body class="text-slate-900">
     <div id="root">
-        <div class="h-screen flex items-center justify-center bg-slate-950 text-white">
-            <div class="text-center">
+        <div class="h-screen flex items-center justify-center bg-slate-950 text-white text-center">
+            <div>
                 <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                <p class="font-black uppercase tracking-widest text-xs opacity-50">Sincronizando Fpimentel Seguros...</p>
+                <p class="font-black uppercase tracking-widest text-xs opacity-50 italic text-blue-400">Sincronizando Sistema Fpimentel...</p>
             </div>
         </div>
     </div>
@@ -53,8 +38,8 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- COMPONENTE LOGO ---
-        const Logo = ({ className = "h-12", textVisible = true }) => {
+        // --- COMPONENTE LOGO CON TU NUEVA IMAGEN ---
+        const Logo = ({ className = "h-14", textVisible = true }) => {
             const [imgError, setImgError] = useState(false);
             return (
                 <div className="flex flex-col items-center gap-2">
@@ -65,9 +50,9 @@
                             onError={() => setImgError(true)}
                         />
                     ) : (
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg">F</div>
+                        <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-blue-600 font-black italic shadow-2xl border-4 border-blue-500 mb-2">F</div>
                     )}
-                    {textVisible && <span className="text-blue-400 font-black tracking-widest text-[10px] uppercase italic">Fpimentel Seguros</span>}
+                    {textVisible && <span className="text-blue-400 font-black tracking-[0.3em] text-[9px] uppercase italic">Fpimentel Seguros</span>}
                 </div>
             );
         };
@@ -78,7 +63,7 @@
             const [showModal, setShowModal] = useState(false);
             const [modalType, setModalType] = useState('policy'); 
 
-            // --- DATOS MAESTROS ---
+            // --- ESTADOS DE DATOS ---
             const [users, setUsers] = useState([
                 { id: 'u1', username: 'Eduardog', name: 'Eduardo G.', role: 'Admin', avatar: 'E', pass: '123456' }
             ]);
@@ -91,15 +76,10 @@
                 { name: "PYME", commission: 10.5 }
             ]);
 
-            const [contacts, setContacts] = useState([
-                { id: 1, name: "Vanessa Marie Pimentel", phone: "8090001111", email: "vanessa@mail.com", notes: "Contacto VIP - Novia" },
-                { id: 2, name: "Andrés Pimentel", phone: "8094763535", email: "andres@mail.com", notes: "Papá" }
-            ]);
-
             const [leads, setLeads] = useState([
                 { id: 1, name: "Andrés Pimentel", status: "Nuevo", branch: "Automóvil", phone: "8094763535", date: "2024-05-11" },
-                { id: 2, name: "Corporativo X", status: "Propuesta", branch: "PYME", phone: "8295551234", date: "2024-05-10" },
-                { id: 3, name: "Cliente Antiguo", status: "Perdido", branch: "Salud", phone: "8091112222", date: "2024-05-01" }
+                { id: 2, name: "Empresa Corporativa SA", status: "Propuesta", branch: "Fianzas", phone: "8295551122", date: "2024-05-10" },
+                { id: 3, name: "Hotel Playa Azul", status: "Perdido", branch: "Hogar", phone: "8090002222", date: "2024-05-01" }
             ]);
 
             const [policies, setPolicies] = useState([
@@ -110,7 +90,7 @@
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
 
-            // --- ESTADÍSTICAS ---
+            // --- LÓGICA DE ESTADÍSTICAS ---
             const stats = useMemo(() => {
                 const breakdown = { Mensual: 0, Trimestral: 0, Anual: 0, Total: 0 };
                 const byBranch = {};
@@ -128,10 +108,14 @@
                 });
                 
                 const top5 = [...policies]
-                    .map(p => ({ 
-                        ...p, 
-                        commValue: (p.premium * (branches.find(b => b.name === p.branch)?.commission || 10)) / 100 
-                    }))
+                    .map(p => {
+                        const rate = branches.find(b => b.name === p.branch)?.commission || 10;
+                        return { 
+                            ...p, 
+                            rate,
+                            commValue: (p.premium * rate) / 100 
+                        }
+                    })
                     .sort((a, b) => b.commValue - a.commValue)
                     .slice(0, 5);
 
@@ -144,7 +128,6 @@
                     const canvasId = activeTab === 'dashboard' ? 'dashChart' : 'financeChart';
                     const ctx = document.getElementById(canvasId);
                     if (ctx) {
-                        // Limpiar gráficos previos para evitar solapamientos
                         const chartStatus = Chart.getChart(canvasId);
                         if (chartStatus) chartStatus.destroy();
 
@@ -153,19 +136,20 @@
                             data: {
                                 labels: Object.keys(stats.byBranch),
                                 datasets: [{
-                                    label: 'Comisiones RD$',
+                                    label: 'Monto RD$',
                                     data: Object.values(stats.byBranch),
-                                    backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#6366f1', '#f43f5e'],
+                                    backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#6366f1', '#f43f5e', '#ef4444'],
                                     borderWidth: 0,
-                                    borderRadius: 10
+                                    borderRadius: activeTab === 'finanzas' ? 12 : 0
                                 }]
                             },
                             options: { 
                                 maintainAspectRatio: false, 
                                 plugins: { 
                                     legend: { 
-                                        position: activeTab === 'dashboard' ? 'bottom' : 'top',
-                                        display: activeTab === 'dashboard'
+                                        position: 'bottom', 
+                                        display: activeTab === 'dashboard',
+                                        labels: { font: { weight: 'bold', size: 10 } }
                                     } 
                                 },
                                 scales: activeTab === 'finanzas' ? {
@@ -181,7 +165,7 @@
             const triggerWA = (type, data) => {
                 let msg = type === 'renovacion' 
                     ? `Hola ${data.client}, su póliza de ${data.branch} vence el ${data.expiry}. ¿Desea renovar con Fpimentel Seguros?`
-                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros. ¿Cómo podemos ayudarte hoy?`;
+                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros.`;
                 window.open(`https://wa.me/${data.phone}?text=${encodeURIComponent(msg)}`, '_blank');
             };
 
@@ -192,25 +176,29 @@
                     setPolicies([...policies, { id: Date.now(), client: fd.get('client'), branch: fd.get('branch'), premium: parseFloat(fd.get('premium')), expiry: fd.get('expiry'), phone: fd.get('phone'), freq: fd.get('freq'), agent: loggedUser.username }]);
                 } else if (modalType === 'lead') {
                     setLeads([...leads, { id: Date.now(), name: fd.get('client'), branch: fd.get('branch'), phone: fd.get('phone'), status: 'Nuevo', date: new Date().toLocaleDateString() }]);
-                } else if (modalType === 'contact') {
-                    setContacts([...contacts, { id: Date.now(), name: fd.get('client'), phone: fd.get('phone'), email: fd.get('email') || '', notes: fd.get('notes') || '' }]);
                 }
                 setShowModal(false);
             };
 
             if (!loggedUser) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-sans">
-                        <div className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-md text-center border-t-[12px] border-blue-600 animate-in">
-                            <Logo className="h-20 mx-auto mb-6" />
-                            <h1 className="text-2xl font-black italic tracking-tighter text-slate-800 uppercase mb-8 leading-none">Fpimentel CRM</h1>
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+                        <div className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-md text-center border-t-[15px] border-t-blue-600 animate-in">
+                            <Logo className="h-24 mx-auto mb-6" />
+                            <h1 className="text-3xl font-black italic tracking-tighter text-slate-800 uppercase mb-8 leading-none">Fpimentel CRM</h1>
                             <div className="space-y-4">
-                                <input id="u_log" placeholder="Usuario" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 uppercase transition-all" />
-                                <input id="p_log" type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all" />
+                                <div className="text-left space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Usuario Administrador</label>
+                                    <input id="u_log" placeholder="Eduardog" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-8 focus:ring-blue-50 transition-all uppercase" />
+                                </div>
+                                <div className="text-left space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Clave de Acceso</label>
+                                    <input id="p_log" type="password" placeholder="••••••" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-8 focus:ring-blue-50 transition-all" />
+                                </div>
                                 <button onClick={() => {
                                     const user = users.find(x => x.username.toLowerCase() === document.getElementById('u_log').value.toLowerCase() && x.pass === document.getElementById('p_log').value);
-                                    if (user) setLoggedUser(user); else alert("Error de Acceso: Verifica usuario y clave");
-                                }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl active:scale-95 transition-all">ACCEDER AL PANEL</button>
+                                    if (user) setLoggedUser(user); else alert("Acceso denegado: Datos incorrectos");
+                                }} className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-2xl active:scale-95 transition-all mt-6">ENTRAR AL SISTEMA</button>
                             </div>
                         </div>
                     </div>
@@ -218,16 +206,15 @@
             }
 
             return (
-                <div className="flex h-screen overflow-hidden text-left">
-                    {/* Sidebar Sidebar */}
+                <div className="flex h-screen overflow-hidden text-left font-sans">
+                    {/* Sidebar NAVEGACIÓN */}
                     <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-50">
-                        <div className="text-center mb-12 border-b border-white/5 pb-8">
+                        <div className="text-center mb-12 border-b border-white/5 pb-10">
                             <Logo className="h-16 mx-auto filter invert brightness-0 mb-4" />
                         </div>
                         <nav className="flex-1 space-y-1.5 uppercase text-[10px] font-black tracking-[0.2em]">
                             {[
                                 { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
-                                { id: 'contacts', icon: 'contact-2', label: 'Contactos' },
                                 { id: 'leads', icon: 'users', label: 'Leads' },
                                 { id: 'pipeline', icon: 'trending-up', label: 'Pipeline' },
                                 { id: 'cartera', icon: 'briefcase', label: 'Cartera' },
@@ -239,84 +226,88 @@
                                 </button>
                             ))}
                         </nav>
-                        <div className="mt-auto p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-lg uppercase">{loggedUser.avatar}</div>
-                            <div className="flex-1 overflow-hidden text-left">
+                        <div className="mt-auto p-5 bg-white/5 rounded-3xl border border-white/10 flex items-center gap-4 shadow-inner">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-xl uppercase">{loggedUser.avatar}</div>
+                            <div className="flex-1 overflow-hidden">
                                 <p className="text-[10px] font-black truncate uppercase tracking-tighter leading-none">{loggedUser.name}</p>
-                                <p className="text-[8px] text-blue-400 font-bold uppercase mt-1 italic">{loggedUser.role}</p>
+                                <p className="text-[8px] text-blue-400 font-bold uppercase mt-1 italic tracking-widest">{loggedUser.role}</p>
                             </div>
-                            <button onClick={()=>setLoggedUser(null)} className="text-slate-500 hover:text-rose-500 transition-all"><i data-lucide="log-out" className="w-4 h-4"></i></button>
+                            <button onClick={()=>setLoggedUser(null)} className="text-slate-500 hover:text-rose-500 transition-all"><i data-lucide="log-out" className="w-5 h-5"></i></button>
                         </div>
                     </aside>
 
                     <main className="flex-1 p-10 overflow-y-auto custom-scrollbar bg-slate-50">
                         <header className="mb-10 flex justify-between items-end border-b pb-8 border-slate-200 animate-in">
                             <div className="text-left">
-                                <h1 className="text-4xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
-                                    {activeTab === 'dashboard' ? 'Métricas Globales' : activeTab === 'finanzas' ? 'Análisis de Comisiones' : activeTab.toUpperCase()}
+                                <h1 className="text-5xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
+                                    {activeTab === 'dashboard' ? 'Dirección Ejecutiva' : activeTab.toUpperCase()}
                                 </h1>
-                                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 italic flex items-center">
-                                    <i data-lucide="shield-check" className="w-3 h-3 mr-2 text-blue-600"></i> Fpimentel Seguros | {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                <p className="text-slate-400 font-bold uppercase text-[11px] tracking-[0.4em] mt-4 italic flex items-center">
+                                    <i data-lucide="shield-check" className="w-4 h-4 mr-2 text-blue-600"></i> FPIMENTEL SEGUROS | {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
                                 </p>
                             </div>
-                            <button onClick={() => setShowModal(true)} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-2xl hover:bg-blue-600 transition-all text-[10px] tracking-[0.2em] group">
-                                <i data-lucide="plus-circle" className="w-4 h-4 group-hover:rotate-90 transition-all"></i> NUEVO REGISTRO
+                            <button onClick={() => setShowModal(true)} className="bg-slate-900 text-white px-10 py-5 rounded-[1.5rem] font-black flex items-center gap-4 shadow-2xl hover:bg-blue-600 transition-all text-xs tracking-[0.2em] group border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">
+                                <i data-lucide="plus-circle" className="w-5 h-5 group-hover:rotate-90 transition-all"></i> NUEVO REGISTRO
                             </button>
                         </header>
 
                         {/* --- DASHBOARD --- */}
                         {activeTab === 'dashboard' && (
-                            <div className="space-y-10 animate-in text-left">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-blue-600 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Pólizas Activas</p><p className="text-5xl font-black tracking-tighter italic">{policies.length}</p></div>
-                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-amber-500 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Contactos</p><p className="text-5xl font-black tracking-tighter italic">{contacts.length}</p></div>
-                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-rose-500 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Vencimientos</p><p className="text-5xl font-black tracking-tighter text-rose-600 italic">1</p></div>
-                                    <div className="bg-[#0f172a] p-8 rounded-3xl border-l-[8px] border-l-emerald-500 shadow-sm text-white"><p className="text-[10px] font-black text-emerald-400 uppercase mb-1 italic">Mensualidad</p><p className="text-3xl font-black text-emerald-400 italic font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
+                            <div className="space-y-12 animate-in text-left">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-blue-600 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Pólizas Activas</p><p className="text-6xl font-black tracking-tighter italic leading-none">{policies.length}</p></div>
+                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-rose-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Vencimientos</p><p className="text-6xl font-black tracking-tighter text-rose-600 italic leading-none">1</p></div>
+                                    <div className="bg-[#0f172a] p-8 rounded-[2rem] border-l-[10px] border-l-blue-400 shadow-2xl text-white"><p className="text-[10px] font-black text-blue-300 uppercase mb-2 italic text-blue-400">Mensualidad RD$</p><p className="text-5xl font-black tracking-tighter italic font-mono text-emerald-400 leading-none">${stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
+                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-emerald-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Cartera Anual</p><p className="text-4xl font-black text-slate-800 italic font-mono leading-none">${stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                    <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border overflow-hidden">
-                                        <h3 className="font-black italic uppercase tracking-widest text-sm mb-8 text-slate-800 flex justify-between items-center">
-                                            <span>Top 5 Mayores Comisiones</span>
-                                            <i data-lucide="award" className="text-amber-500"></i>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                                    <div className="lg:col-span-2 bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden relative">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+                                        <h3 className="font-black italic uppercase tracking-widest text-lg mb-10 text-slate-800 flex justify-between items-center border-b pb-6">
+                                            <span>Ranking: Top 5 Comisiones</span>
+                                            <i data-lucide="award" className="text-amber-500 w-8 h-8"></i>
                                         </h3>
-                                        <div className="space-y-4">
+                                        <div className="space-y-6">
                                             {stats.top5.map((p, i) => (
-                                                <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 group">
-                                                    <div className="flex items-center gap-6">
-                                                        <span className="text-2xl font-black italic text-blue-200 group-hover:text-blue-400">#0{i+1}</span>
-                                                        <div><p className="font-black text-slate-800 uppercase italic leading-none">{p.client}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{p.branch}</p></div>
+                                                <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl hover:bg-white hover:shadow-2xl hover:border-blue-200 border-2 border-transparent transition-all group cursor-pointer">
+                                                    <div className="flex items-center gap-8">
+                                                        <span className="text-3xl font-black italic text-slate-200 group-hover:text-blue-600 transition-colors">#0{i+1}</span>
+                                                        <div>
+                                                            <p className="font-black text-slate-800 uppercase italic text-lg leading-none mb-1">{p.client}</p>
+                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">{p.branch} • Humano {p.rate}%</p>
+                                                        </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="font-black text-emerald-600 font-mono">$RD {p.commValue.toLocaleString()}</p>
-                                                        <p className="text-[9px] font-black text-slate-300 uppercase">Proyectado Anual</p>
+                                                        <p className="font-black text-emerald-600 font-mono text-2xl leading-none italic mb-1">$RD {p.commValue.toLocaleString()}</p>
+                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Liquidación Anual</p>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-center flex flex-col justify-center">
-                                        <h3 className="font-black italic uppercase tracking-widest text-[10px] mb-8 text-slate-400">Mix de Cartera</h3>
+                                    <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 text-center flex flex-col justify-center">
+                                        <h3 className="font-black italic uppercase tracking-widest text-xs mb-10 text-slate-400">Mix de Cartera Activa</h3>
                                         <div className="chart-container"><canvas id="dashChart"></canvas></div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- FINANZAS (CON GRAFICOS) --- */}
+                        {/* --- FINANZAS (Gráficos) --- */}
                         {activeTab === 'finanzas' && (
-                            <div className="space-y-10 animate-in text-left">
+                            <div className="space-y-12 animate-in text-left">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-blue-500">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Comisión Mensual</p>
-                                        <p className="text-5xl font-black italic tracking-tighter text-blue-600 font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
+                                    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border-t-[12px] border-t-blue-600">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 italic underline decoration-blue-200 underline-offset-8">Comisión Mensual</p>
+                                        <p className="text-6xl font-black italic tracking-tighter text-blue-600 font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:0})}</p>
                                     </div>
-                                    <div className="bg-[#0f172a] p-10 rounded-[2.5rem] shadow-xl text-white border-t-8 border-t-emerald-500">
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 italic">Total Anual Gestionado</p>
-                                        <p className="text-5xl font-black italic tracking-tighter font-mono text-white leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
+                                    <div className="bg-[#0f172a] p-12 rounded-[3rem] shadow-2xl text-white border-t-[12px] border-t-emerald-500">
+                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3 italic underline decoration-emerald-900 underline-offset-8">Cartera Anual Total</p>
+                                        <p className="text-6xl font-black italic tracking-tighter font-mono text-white leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:0})}</p>
                                     </div>
-                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col justify-center">
-                                        <h3 className="font-black italic uppercase tracking-widest text-[9px] mb-4 text-slate-400 text-center uppercase">Rendimiento por Ramo</h3>
+                                    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col justify-center relative overflow-hidden">
+                                        <h3 className="font-black italic uppercase tracking-widest text-[10px] mb-8 text-slate-400 text-center uppercase">Volumen por Ramo</h3>
                                         <div className="chart-container"><canvas id="financeChart"></canvas></div>
                                     </div>
                                 </div>
@@ -325,29 +316,29 @@
 
                         {/* --- LEADS --- */}
                         {activeTab === 'leads' && (
-                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100 text-left">
-                                <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-black italic tracking-widest uppercase text-lg text-slate-800 italic">Bandeja de Prospectos</h3>
-                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{leads.length} prospectos activos</span>
+                            <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in border border-slate-100 text-left">
+                                <div className="p-10 border-b bg-slate-50/50 flex justify-between items-center italic">
+                                    <h3 className="font-black italic uppercase tracking-widest text-2xl text-slate-800">Oportunidades de Venta</h3>
+                                    <span className="bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase italic shadow-2xl">{leads.length} prospectos</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-8">Nombre / Cliente</th><th className="p-8 text-center">Ramo de Interés</th><th className="p-8 text-center">Estado</th><th className="p-8 text-right">Contacto</th></tr>
+                                        <thead className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">
+                                            <tr><th className="p-10 text-center">Prospecto</th><th className="p-10 text-center">Interés</th><th className="p-10 text-center">Estado</th><th className="p-10 text-right">Contacto</th></tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 text-sm italic">
                                             {leads.map(l => (
                                                 <tr key={l.id} className="hover:bg-blue-50/20 transition-all group">
-                                                    <td className="p-8 font-black text-slate-800 uppercase italic">
+                                                    <td className="p-10 font-black text-slate-800 uppercase italic text-lg leading-none">
                                                         {l.name}
-                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-tighter not-italic uppercase">Registrado: {l.date}</p>
+                                                        <p className="text-[10px] text-slate-300 font-bold mt-2 not-italic uppercase tracking-widest">Desde: {l.date}</p>
                                                     </td>
-                                                    <td className="p-8 text-center"><span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">{l.branch}</span></td>
-                                                    <td className="p-8 text-center">
-                                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${l.status==='Perdido'?'bg-rose-100 text-rose-500':'bg-amber-100 text-amber-500'}`}>{l.status}</span>
+                                                    <td className="p-10 text-center"><span className="bg-blue-50 text-blue-600 px-5 py-2 rounded-full text-[10px] font-black uppercase italic shadow-sm">{l.branch}</span></td>
+                                                    <td className="p-10 text-center">
+                                                        <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase italic ${l.status==='Perdido'?'bg-rose-100 text-rose-500':'bg-amber-100 text-amber-600'}`}>{l.status}</span>
                                                     </td>
-                                                    <td className="p-8 text-right">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="bg-emerald-50 text-emerald-600 px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm italic flex items-center gap-2 ml-auto active:scale-95">
+                                                    <td className="p-10 text-right">
+                                                        <button onClick={()=>triggerWA('lead', l)} className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-md italic flex items-center gap-3 ml-auto transform active:scale-95">
                                                             <i data-lucide="message-circle" className="w-4 h-4"></i> WhatsApp
                                                         </button>
                                                     </td>
@@ -363,19 +354,19 @@
                         {activeTab === 'pipeline' && (
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 animate-in text-left">
                                 {["Nuevos", "Propuesta", "Ganados", "Perdidos"].map((status) => (
-                                    <div key={status} className="flex flex-col gap-6">
-                                        <h4 className={`font-black italic uppercase tracking-widest text-xs px-4 flex justify-between ${status==='Perdidos'?'text-rose-500':'text-slate-400'}`}>
+                                    <div key={status} className="flex flex-col gap-8">
+                                        <h4 className={`font-black italic uppercase tracking-[0.3em] text-xs px-6 py-3 rounded-2xl flex justify-between shadow-inner ${status==='Perdidos'?'bg-rose-50 text-rose-500':'bg-slate-100 text-slate-400'}`}>
                                             <span>{status}</span>
-                                            <span className="bg-slate-100 px-2 py-0.5 rounded-lg text-[10px]">{leads.filter(l=> (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).length}</span>
+                                            <span className="font-bold">{leads.filter(l=> (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).length}</span>
                                         </h4>
-                                        <div className="kanban-col custom-scrollbar overflow-y-auto">
+                                        <div className="kanban-col custom-scrollbar overflow-y-auto border-t-8 border-t-blue-500/10">
                                             {leads.filter(l => (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).map(l => (
-                                                <div key={l.id} className={`bg-white p-6 rounded-3xl shadow-md border-b-4 mb-4 hover:border-blue-500 transition-all group ${status==='Perdidos'?'border-rose-300':'border-slate-100'}`}>
-                                                    <p className="font-black text-slate-800 text-sm italic uppercase mb-1 leading-none">{l.name}</p>
-                                                    <p className="text-[10px] font-bold text-blue-600 uppercase mb-4">{l.branch}</p>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-50 text-emerald-600 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm italic active:scale-95">WA</button>
-                                                        <button className="bg-slate-50 text-slate-400 p-2.5 rounded-xl hover:text-blue-600 transition-all"><i data-lucide="more-vertical" className="w-4 h-4"></i></button>
+                                                <div key={l.id} className={`bg-white p-8 rounded-[2.5rem] shadow-xl border-b-8 mb-6 hover:border-blue-500 transition-all group cursor-move ${status==='Perdidos'?'border-rose-300':'border-slate-100'}`}>
+                                                    <p className="font-black text-slate-800 text-base italic uppercase mb-2 leading-tight">{l.name}</p>
+                                                    <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-6 italic underline underline-offset-4 decoration-blue-100">{l.branch}</p>
+                                                    <div className="flex gap-3">
+                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-50 text-emerald-600 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-600 hover:text-white transition-all shadow-md italic">WA</button>
+                                                        <button className="bg-slate-50 text-slate-400 p-3 rounded-2xl hover:bg-slate-900 hover:text-white transition-all"><i data-lucide="more-horizontal" className="w-5 h-5"></i></button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -385,27 +376,27 @@
                             </div>
                         )}
 
-                        {/* --- CONFIGURACION (ESTABLE Y FUNCIONAL) --- */}
+                        {/* --- AJUSTES (ESTABLE) --- */}
                         {activeTab === 'config' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-in text-left">
-                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-blue-600 flex justify-between items-center">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in text-left">
+                                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100">
+                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b pb-8 text-blue-600 flex justify-between items-center italic">
                                         <span>Ramos Humano Seguros</span>
-                                        <i data-lucide="percent" className="text-blue-100"></i>
+                                        <i data-lucide="percent" className="text-blue-200 w-10 h-10"></i>
                                     </h3>
-                                    <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
-                                        {branches.map((b, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl group border border-transparent hover:border-blue-100 transition-all">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{b.name}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <input value={b.commission} type="number" step="0.1" className="w-16 p-2 rounded-xl text-center font-black text-blue-600 text-xs bg-white border outline-none shadow-inner" 
+                                    <div className="space-y-4 mb-12 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar">
+                                        {branches && branches.map((b, idx) => (
+                                            <div key={idx} className="flex justify-between items-center p-6 bg-slate-50 rounded-3xl group border-2 border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-700 italic">{b.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <input value={b.commission} type="number" step="0.1" className="w-20 p-3 rounded-2xl text-center font-black text-blue-600 text-lg bg-white border-2 border-slate-100 outline-none shadow-inner transition-all focus:ring-8 focus:ring-blue-50" 
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
                                                             setBranches(branches.map((item, i) => i === idx ? { ...item, commission: val } : item));
                                                         }} 
                                                     />
-                                                    <span className="text-[10px] font-black text-slate-300">%</span>
-                                                    <button onClick={()=>setBranches(branches.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-rose-500 ml-2 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                    <span className="text-xs font-black text-slate-300">%</span>
+                                                    <button onClick={()=>setBranches(branches.filter((_, i) => i !== idx))} className="text-slate-200 hover:text-rose-500 ml-4 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                                                 </div>
                                             </div>
                                         ))}
@@ -419,32 +410,32 @@
                                             setBranches([...branches, { name: bname, commission: bcomm }]);
                                             e.target.reset();
                                         }
-                                    }} className="space-y-4 pt-6 border-t border-dashed">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Añadir Nuevo Ramo</p>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input name="b_name" required placeholder="Nombre (Ej: Viajes)" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-blue-100" />
-                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Comisión" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-blue-100" />
+                                    }} className="space-y-6 pt-10 border-t border-dashed">
+                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 italic text-center">Registrar Nuevo Ramo</p>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <input name="b_name" required placeholder="Nombre (Ej: Vida)" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:ring-8 focus:ring-blue-50 transition-all" />
+                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Comisión" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-blue-50 transition-all" />
                                         </div>
-                                        <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all shadow-xl">Guardar Ramo</button>
+                                        <button type="submit" className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 transition-all shadow-2xl active:translate-y-1">ACTUALIZAR TARIFARIO</button>
                                     </form>
                                 </div>
 
-                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-left">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-emerald-600 flex justify-between items-center italic">
+                                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 text-left">
+                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b pb-8 text-emerald-600 flex justify-between items-center italic">
                                         <span>Accesos del Equipo</span>
-                                        <i data-lucide="user-cog" className="text-emerald-100"></i>
+                                        <i data-lucide="user-cog" className="text-emerald-100 w-10 h-10"></i>
                                     </h3>
-                                    <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
-                                        {users.map((u, i) => (
-                                            <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-[2rem] group border border-transparent hover:border-emerald-100 transition-all">
-                                                <div className="flex items-center gap-4 text-left">
-                                                    <div className="w-10 h-10 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-xl shadow-md uppercase">{u.avatar}</div>
+                                    <div className="space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar">
+                                        {users && users.map((u, i) => (
+                                            <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-[2.5rem] group border-2 border-transparent hover:border-emerald-100 hover:bg-white transition-all">
+                                                <div className="flex items-center gap-6 text-left leading-none">
+                                                    <div className="w-14 h-14 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-3xl shadow-xl uppercase text-xl border-4 border-slate-200">{u.avatar}</div>
                                                     <div>
-                                                        <p className="font-black text-slate-800 text-xs leading-none uppercase italic">{u.name}</p>
-                                                        <p className="text-[9px] font-black text-emerald-500 uppercase mt-1 italic leading-none">{u.role}</p>
+                                                        <p className="font-black text-slate-800 text-lg uppercase italic mb-1 leading-none">{u.name}</p>
+                                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic leading-none">{u.role}</p>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => u.id !== 'u1' && setUsers(users.filter(x => x.id !== u.id))} className={`text-slate-200 ${u.id==='u1'?'opacity-0':'hover:text-rose-500 opacity-0 group-hover:opacity-100'} transition-all`}><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                <button onClick={() => u.id !== 'u1' && setUsers(users.filter(x => x.id !== u.id))} className={`text-slate-200 ${u.id==='u1'?'opacity-0':'hover:text-rose-500 opacity-0 group-hover:opacity-100'} transition-all`}><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                                             </div>
                                         ))}
                                     </div>
@@ -458,107 +449,42 @@
                                             setUsers([...users, { id: 'u'+Date.now(), username: ulog, name: uname, role: fd.get('u_role'), avatar: uname.charAt(0).toUpperCase(), pass: upass }]);
                                             e.target.reset();
                                         }
-                                    }} className="space-y-4 pt-6 border-t border-dashed text-left">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Registrar Colaborador</p>
-                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-emerald-100" />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input name="u_log" required placeholder="ID Usuario" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-emerald-100" />
-                                            <select name="u_role" className="p-4 bg-slate-50 border rounded-2xl text-[9px] font-black uppercase outline-none italic">
+                                    }} className="space-y-6 pt-10 border-t border-dashed text-left leading-none">
+                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 italic text-center">Registrar Nuevo Colaborador</p>
+                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <input name="u_log" required placeholder="ID Usuario" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
+                                            <select name="u_role" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase outline-none italic transition-all shadow-sm">
                                                 <option>Ejecutiva</option>
                                                 <option>Gerente</option>
                                                 <option>Admin</option>
                                             </select>
                                         </div>
-                                        <input name="u_pass" type="password" required placeholder="Contraseña Temporal" className="w-full p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-emerald-100" />
-                                        <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Crear Acceso</button>
+                                        <input name="u_pass" type="password" required placeholder="Clave Temporal" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
+                                        <button type="submit" className="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-emerald-500/20 active:translate-y-1 transition-all">HABILITAR ACCESO</button>
                                     </form>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- MODAL NUEVO REGISTRO --- */}
-                        {showModal && (
-                            <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in">
-                                <div className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl border-t-[15px] border-t-slate-900">
-                                    <div className="flex justify-between items-center mb-10 border-b pb-6">
-                                        <h2 className="text-2xl font-black italic uppercase tracking-tighter text-slate-800 leading-none">Nueva Emisión</h2>
-                                        <button onClick={()=>setShowModal(false)} className="text-slate-300 hover:text-rose-500 transition-all"><i data-lucide="x" className="w-8 h-8"></i></button>
-                                    </div>
-                                    <div className="flex gap-2 mb-8 bg-slate-50 p-2 rounded-2xl">
-                                        {['policy', 'lead', 'contact'].map(type => (
-                                            <button key={type} onClick={()=>setModalType(type)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${modalType===type?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>
-                                                {type === 'policy' ? 'Póliza' : type === 'lead' ? 'Lead' : 'Contacto'}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <form onSubmit={handleNewRecord} className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label><input name="client" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 shadow-inner" /></div>
-                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp</label><input name="phone" required placeholder="809XXXXXXX" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 shadow-inner" /></div>
-                                            
-                                            {modalType === 'contact' ? (
-                                                <div className="col-span-2 space-y-4">
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label><input name="email" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notas</label><input name="notes" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ramo Humano</label><select name="branch" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs shadow-inner italic">{branches.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}</select></div>
-                                                    {modalType === 'policy' && (
-                                                        <>
-                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prima Anual Bruta</label><input name="premium" type="number" step="0.01" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm text-emerald-600 shadow-inner" /></div>
-                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia</label><select name="freq" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs italic shadow-inner"><option>Mensual</option><option>Trimestral</option><option>Anual</option></select></div>
-                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimiento</label><input name="expiry" type="date" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                        <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all mt-6 active:scale-95 italic">Finalizar Registro</button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- CONTACTOS --- */}
-                        {activeTab === 'contacts' && (
-                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100">
-                                <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center text-left">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg text-slate-800">Directorio de Contactos</h3>
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-8">Nombre Completo</th><th className="p-8">WhatsApp</th><th className="p-8">Email</th><th className="p-8 text-right">Acciones</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
-                                            {contacts.map(c => (
-                                                <tr key={c.id} className="hover:bg-blue-50/20 transition-all group">
-                                                    <td className="p-8 font-black text-slate-800 uppercase italic">{c.name}</td>
-                                                    <td className="p-8 text-blue-600 font-bold font-mono">{c.phone}</td>
-                                                    <td className="p-8 text-slate-500">{c.email}</td>
-                                                    <td className="p-8 text-right">
-                                                        <button onClick={()=>triggerWA('contacto', c)} className="bg-emerald-50 text-emerald-600 p-3 rounded-xl shadow-sm hover:bg-emerald-600 hover:text-white transition-all active:scale-95"><i data-lucide="message-circle" className="w-4 h-4"></i></button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- CARTERA --- */}
+                        {/* --- CARTERA (Con Comisiones Detalladas) --- */}
                         {activeTab === 'cartera' && (
-                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100">
-                                <div className="p-8 border-b bg-slate-900 text-white flex justify-between items-center">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg">Inventario Activo</h3>
-                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{policies.length} pólizas</span>
+                            <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-in border border-slate-100 text-left">
+                                <div className="p-12 border-b bg-slate-900 text-white flex justify-between items-center italic">
+                                    <h3 className="font-black italic uppercase tracking-widest text-2xl">Inventario en Vigor</h3>
+                                    <span className="bg-blue-600 text-white px-8 py-3 rounded-full text-xs font-black uppercase italic shadow-2xl">{policies.length} pólizas</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-6">Asegurado</th><th className="p-6 text-center">Ramo</th><th className="p-6 text-center">Prima</th><th className="p-6 text-center">Pago</th><th className="p-6 text-right">Comisión Proyectada</th><th className="p-6 text-right">Acción</th></tr>
+                                        <thead className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">
+                                            <tr>
+                                                <th className="p-10">Asegurado</th>
+                                                <th className="p-10 text-center">Ramo</th>
+                                                <th className="p-10 text-center">Prima ($RD)</th>
+                                                <th className="p-10 text-center">% Com.</th>
+                                                <th className="p-10 text-right">Comisión ($RD)</th>
+                                                <th className="p-10 text-right">Acción</th>
+                                            </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 text-sm italic">
                                             {policies.map(p => {
@@ -566,15 +492,19 @@
                                                 const comm = (p.premium * rate) / 100;
                                                 return (
                                                     <tr key={p.id} className="hover:bg-blue-50/30 transition-all group">
-                                                        <td className="p-6 font-black text-slate-800 uppercase italic">
+                                                        <td className="p-10 font-black text-slate-800 uppercase italic text-lg leading-none">
                                                             {p.client}
-                                                            <p className="text-[9px] text-slate-400 font-bold mt-1 not-italic uppercase">{p.phone}</p>
+                                                            <p className="text-[10px] text-slate-300 font-bold mt-2 not-italic uppercase tracking-widest leading-none italic">{p.phone}</p>
                                                         </td>
-                                                        <td className="p-6 text-center"><span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">{p.branch}</span></td>
-                                                        <td className="p-6 text-center font-mono font-black text-slate-700 italic">$RD {p.premium.toLocaleString()}</td>
-                                                        <td className="p-6 text-center uppercase font-black text-[9px] text-slate-400 italic">{p.freq}</td>
-                                                        <td className="p-6 text-right font-black text-emerald-600 font-mono italic">$RD {comm.toLocaleString()}</td>
-                                                        <td className="p-6 text-right"><button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-50 text-rose-500 p-3 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"><i data-lucide="refresh-cw" className="w-4 h-4"></i></button></td>
+                                                        <td className="p-10 text-center"><span className="bg-blue-50 text-blue-600 px-6 py-2 rounded-full text-[10px] font-black uppercase italic shadow-sm">{p.branch}</span></td>
+                                                        <td className="p-10 text-center font-mono font-black text-slate-800 italic text-lg leading-none tracking-tighter">${p.premium.toLocaleString()}</td>
+                                                        <td className="p-10 text-center font-black text-blue-500 italic uppercase leading-none">{rate}%</td>
+                                                        <td className="p-10 text-right font-black text-emerald-600 font-mono italic text-lg leading-none tracking-tighter">${comm.toLocaleString()}</td>
+                                                        <td className="p-10 text-right">
+                                                            <button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-50 text-rose-500 p-4 rounded-3xl hover:bg-rose-600 hover:text-white transition-all shadow-xl active:scale-95">
+                                                                <i data-lucide="refresh-cw" className="w-5 h-5"></i>
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}
