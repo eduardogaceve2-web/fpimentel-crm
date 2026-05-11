@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fpimentel Seguros CRM</title>
+    <!-- Cargamos todo desde la nube para que sea fácil para ti -->
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
+    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
+    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
+    <style>
+        @import url('[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap)');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Aquí va toda la lógica del CRM que diseñamos
+        const { useState, useMemo, useEffect } = React;
+        
+        // Iconos de Lucide
+        const Icon = ({ name, size = 20, className = "" }) => {
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        // --- DATOS Y LOGICA (Eduardog, FernadoP, Sandrac) ---
+        
+        function App() {
+            const [loggedUser, setLoggedUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [policies, setPolicies] = useState([
+                { id: 1, client: "Don Fernando Pimentel", phone: "8090000000", type: "Automóvil", premium: 12500, expiryDate: "2025-05-20", agentId: 'u1', frequency: 'Mensual' },
+                { id: 2, client: "Vanessa Marie Pimentel", phone: "8091111111", type: "Salud", premium: 2200, expiryDate: "2025-08-15", agentId: 'u3', frequency: 'Mensual' }
+            ]);
+
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [loggedUser, activeTab]);
+
+            if (!loggedUser) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
+                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center">
+                            <img src="[https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png](https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png)" className="h-20 mx-auto mb-6" />
+                            <h1 className="text-2xl font-black italic mb-2">FPIMENTEL SEGUROS</h1>
+                            <p className="text-slate-400 text-xs mb-8 uppercase tracking-widest font-bold">Portal de Equipo</p>
+                            <input id="u" placeholder="Usuario" className="w-full p-4 bg-slate-50 rounded-2xl mb-4 border outline-none font-bold" />
+                            <input id="p" type="password" placeholder="Clave" className="w-full p-4 bg-slate-50 rounded-2xl mb-6 border outline-none font-bold" />
+                            <button onClick={() => {
+                                const u = document.getElementById('u').value.toLowerCase();
+                                const p = document.getElementById('p').value;
+                                if (p === '123456' && (u === 'eduardog' || u === 'fernadop' || u === 'sandrac')) {
+                                    setLoggedUser({ username: u, avatar: u[0].toUpperCase(), role: u === 'sandrac' ? 'Ejecutiva' : 'Admin' });
+                                } else { alert("Usuario o clave incorrecta"); }
+                            }} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700">Entrar</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen bg-slate-50 overflow-hidden">
+                    {/* Sidebar */}
+                    <div className="w-64 bg-slate-900 text-white p-6 flex flex-col shrink-0">
+                        <div className="text-center mb-10">
+                            <h2 className="text-xl font-black italic text-blue-400">FPIMENTEL</h2>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Seguros</p>
+                        </div>
+                        <nav className="flex-1 space-y-2">
+                            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left p-3 rounded-xl flex items-center space-x-3 ${activeTab === 'dashboard' ? 'bg-blue-600' : 'text-slate-400'}`}>
+                                <span>🏠 Dashboard</span>
+                            </button>
+                            <button onClick={() => setActiveTab('polizas')} className={`w-full text-left p-3 rounded-xl flex items-center space-x-3 ${activeTab === 'polizas' ? 'bg-blue-600' : 'text-slate-400'}`}>
+                                <span>📄 Cartera</span>
+                            </button>
+                        </nav>
+                        <button onClick={() => setLoggedUser(null)} className="mt-auto text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest">Cerrar Sesión</button>
+                    </div>
+                    {/* Contenido */}
+                    <main className="flex-1 p-10 overflow-y-auto">
+                        <h1 className="text-4xl font-black italic uppercase mb-8">¡Hola, {loggedUser.username}!</h1>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                            <div className="bg-white p-8 rounded-3xl border-l-[10px] border-blue-600 shadow-sm">
+                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Pólizas Activas</p>
+                                <p className="text-4xl font-black">{policies.length}</p>
+                            </div>
+                            <div className="bg-white p-8 rounded-3xl border-l-[10px] border-emerald-600 shadow-sm">
+                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Status Equipo</p>
+                                <p className="text-2xl font-black text-emerald-600">ONLINE</p>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-[2rem] shadow-sm p-8">
+                            <h3 className="font-black italic uppercase mb-6 border-b pb-4">Cartera de Clientes</h3>
+                            <div className="space-y-4">
+                                {policies.map(p => (
+                                    <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                                        <div>
+                                            <p className="font-black text-slate-800">{p.client}</p>
+                                            <p className="text-[10px] font-bold text-blue-600 uppercase">{p.type} • {p.expiryDate}</p>
+                                        </div>
+                                        <button onClick={() => {
+                                            const msg = `Hola ${p.client}, le recordamos de Fpimentel Seguros el pago de su póliza.`;
+                                            window.open(`https://wa.me/${p.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                        }} className="bg-emerald-100 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">WhatsApp</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
