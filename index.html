@@ -141,8 +141,13 @@
             // --- GRÁFICOS ---
             useEffect(() => {
                 if (loggedUser && (activeTab === 'dashboard' || activeTab === 'finanzas')) {
-                    const ctx = document.getElementById(activeTab === 'dashboard' ? 'dashChart' : 'financeChart');
+                    const canvasId = activeTab === 'dashboard' ? 'dashChart' : 'financeChart';
+                    const ctx = document.getElementById(canvasId);
                     if (ctx) {
+                        // Limpiar gráficos previos para evitar solapamientos
+                        const chartStatus = Chart.getChart(canvasId);
+                        if (chartStatus) chartStatus.destroy();
+
                         new Chart(ctx, {
                             type: activeTab === 'dashboard' ? 'doughnut' : 'bar',
                             data: {
@@ -155,7 +160,19 @@
                                     borderRadius: 10
                                 }]
                             },
-                            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                            options: { 
+                                maintainAspectRatio: false, 
+                                plugins: { 
+                                    legend: { 
+                                        position: activeTab === 'dashboard' ? 'bottom' : 'top',
+                                        display: activeTab === 'dashboard'
+                                    } 
+                                },
+                                scales: activeTab === 'finanzas' ? {
+                                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                                    x: { grid: { display: false } }
+                                } : {}
+                            }
                         });
                     }
                 }
@@ -164,7 +181,7 @@
             const triggerWA = (type, data) => {
                 let msg = type === 'renovacion' 
                     ? `Hola ${data.client}, su póliza de ${data.branch} vence el ${data.expiry}. ¿Desea renovar con Fpimentel Seguros?`
-                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros.`;
+                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros. ¿Cómo podemos ayudarte hoy?`;
                 window.open(`https://wa.me/${data.phone}?text=${encodeURIComponent(msg)}`, '_blank');
             };
 
@@ -175,22 +192,24 @@
                     setPolicies([...policies, { id: Date.now(), client: fd.get('client'), branch: fd.get('branch'), premium: parseFloat(fd.get('premium')), expiry: fd.get('expiry'), phone: fd.get('phone'), freq: fd.get('freq'), agent: loggedUser.username }]);
                 } else if (modalType === 'lead') {
                     setLeads([...leads, { id: Date.now(), name: fd.get('client'), branch: fd.get('branch'), phone: fd.get('phone'), status: 'Nuevo', date: new Date().toLocaleDateString() }]);
+                } else if (modalType === 'contact') {
+                    setContacts([...contacts, { id: Date.now(), name: fd.get('client'), phone: fd.get('phone'), email: fd.get('email') || '', notes: fd.get('notes') || '' }]);
                 }
                 setShowModal(false);
             };
 
             if (!loggedUser) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 font-sans">
                         <div className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-md text-center border-t-[12px] border-blue-600 animate-in">
                             <Logo className="h-20 mx-auto mb-6" />
                             <h1 className="text-2xl font-black italic tracking-tighter text-slate-800 uppercase mb-8 leading-none">Fpimentel CRM</h1>
                             <div className="space-y-4">
-                                <input id="u_log" placeholder="Usuario" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 uppercase" />
-                                <input id="p_log" type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" />
+                                <input id="u_log" placeholder="Usuario" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 uppercase transition-all" />
+                                <input id="p_log" type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all" />
                                 <button onClick={() => {
                                     const user = users.find(x => x.username.toLowerCase() === document.getElementById('u_log').value.toLowerCase() && x.pass === document.getElementById('p_log').value);
-                                    if (user) setLoggedUser(user); else alert("Error de Acceso");
+                                    if (user) setLoggedUser(user); else alert("Error de Acceso: Verifica usuario y clave");
                                 }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl active:scale-95 transition-all">ACCEDER AL PANEL</button>
                             </div>
                         </div>
@@ -199,7 +218,7 @@
             }
 
             return (
-                <div className="flex h-screen overflow-hidden">
+                <div className="flex h-screen overflow-hidden text-left">
                     {/* Sidebar Sidebar */}
                     <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-50">
                         <div className="text-center mb-12 border-b border-white/5 pb-8">
@@ -221,7 +240,7 @@
                             ))}
                         </nav>
                         <div className="mt-auto p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-lg">{loggedUser.avatar}</div>
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-lg uppercase">{loggedUser.avatar}</div>
                             <div className="flex-1 overflow-hidden text-left">
                                 <p className="text-[10px] font-black truncate uppercase tracking-tighter leading-none">{loggedUser.name}</p>
                                 <p className="text-[8px] text-blue-400 font-bold uppercase mt-1 italic">{loggedUser.role}</p>
@@ -234,7 +253,7 @@
                         <header className="mb-10 flex justify-between items-end border-b pb-8 border-slate-200 animate-in">
                             <div className="text-left">
                                 <h1 className="text-4xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
-                                    {activeTab === 'dashboard' ? 'Métricas Globales' : activeTab.toUpperCase()}
+                                    {activeTab === 'dashboard' ? 'Métricas Globales' : activeTab === 'finanzas' ? 'Análisis de Comisiones' : activeTab.toUpperCase()}
                                 </h1>
                                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 italic flex items-center">
                                     <i data-lucide="shield-check" className="w-3 h-3 mr-2 text-blue-600"></i> Fpimentel Seguros | {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -245,71 +264,91 @@
                             </button>
                         </header>
 
-                        {/* --- MODULO DASHBOARD (impactante) --- */}
+                        {/* --- DASHBOARD --- */}
                         {activeTab === 'dashboard' && (
                             <div className="space-y-10 animate-in text-left">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-blue-600 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Pólizas</p><p className="text-5xl font-black tracking-tighter italic">{policies.length}</p></div>
+                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-blue-600 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Pólizas Activas</p><p className="text-5xl font-black tracking-tighter italic">{policies.length}</p></div>
+                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-amber-500 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Contactos</p><p className="text-5xl font-black tracking-tighter italic">{contacts.length}</p></div>
                                     <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-rose-500 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Vencimientos</p><p className="text-5xl font-black tracking-tighter text-rose-600 italic">1</p></div>
-                                    <div className="bg-[#0f172a] p-8 rounded-3xl border-l-[8px] border-l-blue-400 shadow-sm text-white"><p className="text-[10px] font-black text-blue-300 uppercase mb-1 italic text-blue-400">Mensualidad</p><p className="text-4xl font-black tracking-tighter italic font-mono text-emerald-400">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
-                                    <div className="bg-white p-8 rounded-3xl border-l-[8px] border-l-emerald-500 shadow-sm"><p className="text-[10px] font-black text-slate-400 uppercase mb-1 italic">Cartera Anual</p><p className="text-3xl font-black text-slate-800 italic font-mono">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
+                                    <div className="bg-[#0f172a] p-8 rounded-3xl border-l-[8px] border-l-emerald-500 shadow-sm text-white"><p className="text-[10px] font-black text-emerald-400 uppercase mb-1 italic">Mensualidad</p><p className="text-3xl font-black text-emerald-400 italic font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                    <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border">
+                                    <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border overflow-hidden">
                                         <h3 className="font-black italic uppercase tracking-widest text-sm mb-8 text-slate-800 flex justify-between items-center">
                                             <span>Top 5 Mayores Comisiones</span>
                                             <i data-lucide="award" className="text-amber-500"></i>
                                         </h3>
                                         <div className="space-y-4">
                                             {stats.top5.map((p, i) => (
-                                                <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100">
+                                                <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100 group">
                                                     <div className="flex items-center gap-6">
-                                                        <span className="text-2xl font-black italic text-blue-200">#0{i+1}</span>
+                                                        <span className="text-2xl font-black italic text-blue-200 group-hover:text-blue-400">#0{i+1}</span>
                                                         <div><p className="font-black text-slate-800 uppercase italic leading-none">{p.client}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{p.branch}</p></div>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="font-black text-emerald-600 font-mono">$RD {p.commValue.toLocaleString()}</p>
-                                                        <p className="text-[9px] font-black text-slate-300 uppercase">Proyectado</p>
+                                                        <p className="text-[9px] font-black text-slate-300 uppercase">Proyectado Anual</p>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-center">
-                                        <h3 className="font-black italic uppercase tracking-widest text-xs mb-8 text-slate-400">Distribución de Ingresos</h3>
+                                    <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-center flex flex-col justify-center">
+                                        <h3 className="font-black italic uppercase tracking-widest text-[10px] mb-8 text-slate-400">Mix de Cartera</h3>
                                         <div className="chart-container"><canvas id="dashChart"></canvas></div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- MODULO LEADS --- */}
+                        {/* --- FINANZAS (CON GRAFICOS) --- */}
+                        {activeTab === 'finanzas' && (
+                            <div className="space-y-10 animate-in text-left">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-blue-500">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Comisión Mensual</p>
+                                        <p className="text-5xl font-black italic tracking-tighter text-blue-600 font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
+                                    </div>
+                                    <div className="bg-[#0f172a] p-10 rounded-[2.5rem] shadow-xl text-white border-t-8 border-t-emerald-500">
+                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 italic">Total Anual Gestionado</p>
+                                        <p className="text-5xl font-black italic tracking-tighter font-mono text-white leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
+                                    </div>
+                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col justify-center">
+                                        <h3 className="font-black italic uppercase tracking-widest text-[9px] mb-4 text-slate-400 text-center uppercase">Rendimiento por Ramo</h3>
+                                        <div className="chart-container"><canvas id="financeChart"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* --- LEADS --- */}
                         {activeTab === 'leads' && (
-                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100">
+                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100 text-left">
                                 <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-black italic tracking-widest uppercase text-lg text-slate-800">Bandeja de Oportunidades</h3>
-                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{leads.length} leads activos</span>
+                                    <h3 className="font-black italic tracking-widest uppercase text-lg text-slate-800 italic">Bandeja de Prospectos</h3>
+                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{leads.length} prospectos activos</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-8">Prospecto</th><th className="p-8 text-center">Ramo</th><th className="p-8 text-center">Estado</th><th className="p-8 text-right">Contacto</th></tr>
+                                            <tr><th className="p-8">Nombre / Cliente</th><th className="p-8 text-center">Ramo de Interés</th><th className="p-8 text-center">Estado</th><th className="p-8 text-right">Contacto</th></tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
+                                        <tbody className="divide-y divide-slate-100 text-sm italic">
                                             {leads.map(l => (
                                                 <tr key={l.id} className="hover:bg-blue-50/20 transition-all group">
                                                     <td className="p-8 font-black text-slate-800 uppercase italic">
                                                         {l.name}
-                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-tighter">Creado: {l.date}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-tighter not-italic uppercase">Registrado: {l.date}</p>
                                                     </td>
                                                     <td className="p-8 text-center"><span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">{l.branch}</span></td>
                                                     <td className="p-8 text-center">
-                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${l.status==='Perdido'?'bg-rose-50 text-rose-500':'bg-amber-50 text-amber-500'}`}>{l.status}</span>
+                                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${l.status==='Perdido'?'bg-rose-100 text-rose-500':'bg-amber-100 text-amber-500'}`}>{l.status}</span>
                                                     </td>
                                                     <td className="p-8 text-right">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm italic flex items-center gap-2 ml-auto">
-                                                            <i data-lucide="message-circle" className="w-3 h-3"></i> WhatsApp
+                                                        <button onClick={()=>triggerWA('lead', l)} className="bg-emerald-50 text-emerald-600 px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm italic flex items-center gap-2 ml-auto active:scale-95">
+                                                            <i data-lucide="message-circle" className="w-4 h-4"></i> WhatsApp
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -320,23 +359,23 @@
                             </div>
                         )}
 
-                        {/* --- MODULO PIPELINE (con perdidos) --- */}
+                        {/* --- PIPELINE CON PERDIDOS --- */}
                         {activeTab === 'pipeline' && (
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 animate-in text-left">
                                 {["Nuevos", "Propuesta", "Ganados", "Perdidos"].map((status) => (
                                     <div key={status} className="flex flex-col gap-6">
-                                        <h4 className={`font-black italic uppercase tracking-widest text-xs px-4 flex justify-between ${status==='Perdidos'?'text-rose-400':'text-slate-400'}`}>
+                                        <h4 className={`font-black italic uppercase tracking-widest text-xs px-4 flex justify-between ${status==='Perdidos'?'text-rose-500':'text-slate-400'}`}>
                                             <span>{status}</span>
-                                            <span>{leads.filter(l=>l.status === status || (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Cotización')).length}</span>
+                                            <span className="bg-slate-100 px-2 py-0.5 rounded-lg text-[10px]">{leads.filter(l=> (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).length}</span>
                                         </h4>
                                         <div className="kanban-col custom-scrollbar overflow-y-auto">
-                                            {leads.filter(l => (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Cotización') || (l.status === status)).map(l => (
-                                                <div key={l.id} className="bg-white p-6 rounded-3xl shadow-md border border-slate-100 mb-4 hover:border-blue-500 transition-all group">
+                                            {leads.filter(l => (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).map(l => (
+                                                <div key={l.id} className={`bg-white p-6 rounded-3xl shadow-md border-b-4 mb-4 hover:border-blue-500 transition-all group ${status==='Perdidos'?'border-rose-300':'border-slate-100'}`}>
                                                     <p className="font-black text-slate-800 text-sm italic uppercase mb-1 leading-none">{l.name}</p>
                                                     <p className="text-[10px] font-bold text-blue-600 uppercase mb-4">{l.branch}</p>
                                                     <div className="flex gap-2">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all italic">WA</button>
-                                                        <button className="bg-slate-50 text-slate-300 p-2 rounded-xl hover:text-blue-500 transition-all"><i data-lucide="arrow-right" className="w-3 h-3"></i></button>
+                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-50 text-emerald-600 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm italic active:scale-95">WA</button>
+                                                        <button className="bg-slate-50 text-slate-400 p-2.5 rounded-xl hover:text-blue-600 transition-all"><i data-lucide="more-vertical" className="w-4 h-4"></i></button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -346,40 +385,20 @@
                             </div>
                         )}
 
-                        {/* --- MODULO FINANZAS (Gráficos) --- */}
-                        {activeTab === 'finanzas' && (
-                            <div className="space-y-10 animate-in text-left">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-blue-500">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Mensualidad Proyectada</p>
-                                        <p className="text-5xl font-black italic tracking-tighter text-blue-600 font-mono">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                    </div>
-                                    <div className="bg-[#0f172a] p-10 rounded-[2.5rem] shadow-xl text-white border-t-8 border-t-emerald-500">
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 italic">Total Cartera Anual</p>
-                                        <p className="text-5xl font-black italic tracking-tighter font-mono text-white leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                    </div>
-                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-amber-500 text-center">
-                                        <h3 className="font-black italic uppercase tracking-widest text-[9px] mb-4 text-slate-400">Rendimiento por Ramo</h3>
-                                        <div className="chart-container"><canvas id="financeChart"></canvas></div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- MODULO CONFIGURACION (Funcional y estable) --- */}
+                        {/* --- CONFIGURACION (ESTABLE Y FUNCIONAL) --- */}
                         {activeTab === 'config' && (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-in text-left">
                                 <div className="bg-white p-10 rounded-[3rem] shadow-xl border">
                                     <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-blue-600 flex justify-between items-center">
-                                        <span>Ramos Humano</span>
+                                        <span>Ramos Humano Seguros</span>
                                         <i data-lucide="percent" className="text-blue-100"></i>
                                     </h3>
                                     <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
-                                        {branches && branches.map((b, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl group">
+                                        {branches.map((b, idx) => (
+                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl group border border-transparent hover:border-blue-100 transition-all">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{b.name}</span>
                                                 <div className="flex items-center gap-2">
-                                                    <input value={b.commission} type="number" step="0.1" className="w-16 p-2 rounded-xl text-center font-black text-blue-600 text-xs bg-white border outline-none" 
+                                                    <input value={b.commission} type="number" step="0.1" className="w-16 p-2 rounded-xl text-center font-black text-blue-600 text-xs bg-white border outline-none shadow-inner" 
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
                                                             setBranches(branches.map((item, i) => i === idx ? { ...item, commission: val } : item));
@@ -394,51 +413,63 @@
                                     <form onSubmit={(e)=>{
                                         e.preventDefault();
                                         const fd = new FormData(e.target);
-                                        setBranches([...branches, { name: fd.get('b_name'), commission: parseFloat(fd.get('b_comm')) }]);
-                                        e.target.reset();
+                                        const bname = fd.get('b_name');
+                                        const bcomm = parseFloat(fd.get('b_comm'));
+                                        if(bname && !isNaN(bcomm)) {
+                                            setBranches([...branches, { name: bname, commission: bcomm }]);
+                                            e.target.reset();
+                                        }
                                     }} className="space-y-4 pt-6 border-t border-dashed">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Añadir Nuevo Ramo</p>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input name="b_name" required placeholder="Nombre Ramo" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-blue-50" />
-                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Com." className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-blue-50" />
+                                            <input name="b_name" required placeholder="Nombre (Ej: Viajes)" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-blue-100" />
+                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Comisión" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-blue-100" />
                                         </div>
-                                        <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 italic">Añadir Ramo</button>
+                                        <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all shadow-xl">Guardar Ramo</button>
                                     </form>
                                 </div>
 
-                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-emerald-600 flex justify-between items-center">
-                                        <span>Accesos Equipo</span>
+                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-left">
+                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-emerald-600 flex justify-between items-center italic">
+                                        <span>Accesos del Equipo</span>
                                         <i data-lucide="user-cog" className="text-emerald-100"></i>
                                     </h3>
-                                    <div className="space-y-4 mb-10">
-                                        {users && users.map((u, i) => (
-                                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-[2rem] group">
+                                    <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
+                                        {users.map((u, i) => (
+                                            <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-[2rem] group border border-transparent hover:border-emerald-100 transition-all">
                                                 <div className="flex items-center gap-4 text-left">
-                                                    <div className="w-10 h-10 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-xl">{u.avatar}</div>
+                                                    <div className="w-10 h-10 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-xl shadow-md uppercase">{u.avatar}</div>
                                                     <div>
-                                                        <p className="font-black text-slate-800 text-xs leading-none uppercase">{u.name}</p>
+                                                        <p className="font-black text-slate-800 text-xs leading-none uppercase italic">{u.name}</p>
                                                         <p className="text-[9px] font-black text-emerald-500 uppercase mt-1 italic leading-none">{u.role}</p>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => i !== 0 && setUsers(users.filter((_, idx) => idx !== i))} className={`text-slate-200 ${i===0?'opacity-0':'hover:text-rose-500 opacity-0 group-hover:opacity-100'} transition-all`}><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                                <button onClick={() => u.id !== 'u1' && setUsers(users.filter(x => x.id !== u.id))} className={`text-slate-200 ${u.id==='u1'?'opacity-0':'hover:text-rose-500 opacity-0 group-hover:opacity-100'} transition-all`}><i data-lucide="trash-2" className="w-4 h-4"></i></button>
                                             </div>
                                         ))}
                                     </div>
                                     <form onSubmit={(e)=>{
                                         e.preventDefault();
                                         const fd = new FormData(e.target);
-                                        setUsers([...users, { id: 'u'+Date.now(), username: fd.get('u_log'), name: fd.get('u_name'), role: fd.get('u_role'), avatar: fd.get('u_name').charAt(0).toUpperCase(), pass: fd.get('u_pass') }]);
-                                        e.target.reset();
-                                    }} className="space-y-4 pt-6 border-t border-dashed">
-                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-emerald-50" />
+                                        const uname = fd.get('u_name');
+                                        const ulog = fd.get('u_log');
+                                        const upass = fd.get('u_pass');
+                                        if(uname && ulog && upass) {
+                                            setUsers([...users, { id: 'u'+Date.now(), username: ulog, name: uname, role: fd.get('u_role'), avatar: uname.charAt(0).toUpperCase(), pass: upass }]);
+                                            e.target.reset();
+                                        }
+                                    }} className="space-y-4 pt-6 border-t border-dashed text-left">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Registrar Colaborador</p>
+                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-4 bg-slate-50 border rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-emerald-100" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input name="u_log" required placeholder="Usuario ID" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-emerald-50" />
-                                            <select name="u_role" className="p-4 bg-slate-50 border rounded-2xl text-[9px] font-black uppercase outline-none">
+                                            <input name="u_log" required placeholder="ID Usuario" className="p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-emerald-100" />
+                                            <select name="u_role" className="p-4 bg-slate-50 border rounded-2xl text-[9px] font-black uppercase outline-none italic">
                                                 <option>Ejecutiva</option>
                                                 <option>Gerente</option>
                                                 <option>Admin</option>
                                             </select>
                                         </div>
+                                        <input name="u_pass" type="password" required placeholder="Contraseña Temporal" className="w-full p-4 bg-slate-50 border rounded-2xl text-[10px] font-black outline-none focus:ring-4 focus:ring-emerald-100" />
                                         <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">Crear Acceso</button>
                                     </form>
                                 </div>
@@ -453,39 +484,52 @@
                                         <h2 className="text-2xl font-black italic uppercase tracking-tighter text-slate-800 leading-none">Nueva Emisión</h2>
                                         <button onClick={()=>setShowModal(false)} className="text-slate-300 hover:text-rose-500 transition-all"><i data-lucide="x" className="w-8 h-8"></i></button>
                                     </div>
-                                    <div className="flex gap-4 mb-8 bg-slate-50 p-2 rounded-2xl">
-                                        <button onClick={()=>setModalType('policy')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${modalType==='policy'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>Póliza</button>
-                                        <button onClick={()=>setModalType('lead')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${modalType==='lead'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>Lead</button>
+                                    <div className="flex gap-2 mb-8 bg-slate-50 p-2 rounded-2xl">
+                                        {['policy', 'lead', 'contact'].map(type => (
+                                            <button key={type} onClick={()=>setModalType(type)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${modalType===type?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>
+                                                {type === 'policy' ? 'Póliza' : type === 'lead' ? 'Lead' : 'Contacto'}
+                                            </button>
+                                        ))}
                                     </div>
                                     <form onSubmit={handleNewRecord} className="space-y-6 text-left">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cliente</label><input name="client" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" /></div>
-                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp</label><input name="phone" required placeholder="809XXXXXXX" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" /></div>
-                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ramo</label><select name="branch" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs">{branches.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}</select></div>
-                                            {modalType === 'policy' && (
+                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label><input name="client" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 shadow-inner" /></div>
+                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp</label><input name="phone" required placeholder="809XXXXXXX" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 shadow-inner" /></div>
+                                            
+                                            {modalType === 'contact' ? (
+                                                <div className="col-span-2 space-y-4">
+                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label><input name="email" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
+                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notas</label><input name="notes" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
+                                                </div>
+                                            ) : (
                                                 <>
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prima Anual</label><input name="premium" type="number" step="0.01" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm text-emerald-600" /></div>
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia</label><select name="freq" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs italic"><option>Mensual</option><option>Trimestral</option><option>Anual</option></select></div>
-                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimiento</label><input name="expiry" type="date" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
+                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ramo Humano</label><select name="branch" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs shadow-inner italic">{branches.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}</select></div>
+                                                    {modalType === 'policy' && (
+                                                        <>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prima Anual Bruta</label><input name="premium" type="number" step="0.01" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm text-emerald-600 shadow-inner" /></div>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia</label><select name="freq" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs italic shadow-inner"><option>Mensual</option><option>Trimestral</option><option>Anual</option></select></div>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimiento</label><input name="expiry" type="date" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm" /></div>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
-                                        <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all mt-6 italic">Cerrar Negocio</button>
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all mt-6 active:scale-95 italic">Finalizar Registro</button>
                                     </form>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- MODULO CONTACTOS (Agenda) --- */}
+                        {/* --- CONTACTOS --- */}
                         {activeTab === 'contacts' && (
                             <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100">
-                                <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-black italic tracking-widest uppercase text-lg text-slate-800">Directorio de Contactos</h3>
+                                <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center text-left">
+                                    <h3 className="font-black italic uppercase tracking-widest text-lg text-slate-800">Directorio de Contactos</h3>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-8">Nombre</th><th className="p-8">WhatsApp</th><th className="p-8">Email</th><th className="p-8">Notas</th><th className="p-8 text-right">Gestión</th></tr>
+                                            <tr><th className="p-8">Nombre Completo</th><th className="p-8">WhatsApp</th><th className="p-8">Email</th><th className="p-8 text-right">Acciones</th></tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 text-sm">
                                             {contacts.map(c => (
@@ -493,9 +537,8 @@
                                                     <td className="p-8 font-black text-slate-800 uppercase italic">{c.name}</td>
                                                     <td className="p-8 text-blue-600 font-bold font-mono">{c.phone}</td>
                                                     <td className="p-8 text-slate-500">{c.email}</td>
-                                                    <td className="p-8 text-slate-400 italic text-xs truncate max-w-[200px]">{c.notes}</td>
                                                     <td className="p-8 text-right">
-                                                        <button onClick={()=>triggerWA('contacto', c)} className="bg-emerald-50 text-emerald-600 p-2 rounded-xl shadow-sm hover:bg-emerald-600 hover:text-white transition-all"><i data-lucide="message-circle" className="w-4 h-4"></i></button>
+                                                        <button onClick={()=>triggerWA('contacto', c)} className="bg-emerald-50 text-emerald-600 p-3 rounded-xl shadow-sm hover:bg-emerald-600 hover:text-white transition-all active:scale-95"><i data-lucide="message-circle" className="w-4 h-4"></i></button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -505,30 +548,33 @@
                             </div>
                         )}
 
-                        {/* --- MODULO CARTERA --- */}
+                        {/* --- CARTERA --- */}
                         {activeTab === 'cartera' && (
                             <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-in border border-slate-100">
                                 <div className="p-8 border-b bg-slate-900 text-white flex justify-between items-center">
-                                    <h3 className="font-black italic tracking-widest uppercase text-lg">Pólizas en Vigor</h3>
-                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{policies.length} registros</span>
+                                    <h3 className="font-black italic uppercase tracking-widest text-lg">Inventario Activo</h3>
+                                    <span className="bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase italic shadow-lg">{policies.length} pólizas</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
                                             <tr><th className="p-6">Asegurado</th><th className="p-6 text-center">Ramo</th><th className="p-6 text-center">Prima</th><th className="p-6 text-center">Pago</th><th className="p-6 text-right">Comisión Proyectada</th><th className="p-6 text-right">Acción</th></tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
+                                        <tbody className="divide-y divide-slate-100 text-sm italic">
                                             {policies.map(p => {
                                                 const rate = branches.find(b => b.name === p.branch)?.commission || 10;
                                                 const comm = (p.premium * rate) / 100;
                                                 return (
                                                     <tr key={p.id} className="hover:bg-blue-50/30 transition-all group">
-                                                        <td className="p-6 font-black text-slate-800 uppercase italic">{p.client}</td>
+                                                        <td className="p-6 font-black text-slate-800 uppercase italic">
+                                                            {p.client}
+                                                            <p className="text-[9px] text-slate-400 font-bold mt-1 not-italic uppercase">{p.phone}</p>
+                                                        </td>
                                                         <td className="p-6 text-center"><span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">{p.branch}</span></td>
                                                         <td className="p-6 text-center font-mono font-black text-slate-700 italic">$RD {p.premium.toLocaleString()}</td>
                                                         <td className="p-6 text-center uppercase font-black text-[9px] text-slate-400 italic">{p.freq}</td>
-                                                        <td className="p-6 text-right font-black text-emerald-600 font-mono">$RD {comm.toLocaleString()}</td>
-                                                        <td className="p-6 text-right"><button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-50 text-rose-500 p-2 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"><i data-lucide="refresh-cw" className="w-4 h-4"></i></button></td>
+                                                        <td className="p-6 text-right font-black text-emerald-600 font-mono italic">$RD {comm.toLocaleString()}</td>
+                                                        <td className="p-6 text-right"><button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-50 text-rose-500 p-3 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"><i data-lucide="refresh-cw" className="w-4 h-4"></i></button></td>
                                                     </tr>
                                                 );
                                             })}
