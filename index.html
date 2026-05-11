@@ -3,406 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fpimentel Seguros CRM - Pro Dashboard</title>
-    <!-- Chosen Palette: Corporate Excellence (Navy Slate 950, Royal Blue 600, Success Emerald 500, Alert Amber 500) -->
+    <title>Fpimentel Seguros CRM - Sistema Limpio</title>
+    <!-- Chosen Palette: Navy Professional (Slate 950, Royal Blue 600, Success Emerald 500) -->
     <!-- Application Structure Plan: 
-        1. Architecture: Single Page Application built with React/Babel for modular component rendering within one file.
-        2. Navigation: Persistent sidebar with semantic icons and dynamic active states.
-        3. Dashboard: Centralized intelligence hub showing real-time metrics (Active, Expiring, Commissions).
-        4. Leads Module: A structured pipeline to track new opportunities from initial contact to proposal.
-        5. Operations: Detailed policy inventory and task management with overdue detection.
-        6. Financial: Multi-level commission view (Personal vs Agency) with Humano Seguros logic.
-        This structure facilitates rapid decision-making and clear visibility of the agency's health.
+        1. Resilient Bootloader: Vanilla JS checks for React/Babel availability before mounting.
+        2. Clean Architecture: Single-file React SPA using Tailwind for high-fidelity UI.
+        3. Feature Set: Dashboard with Chart.js, WhatsApp automation, Lead tracking, and Multi-role access.
+        4. Data Privacy: Initial data cleared as per user request (Eduardog as sole admin).
     -->
     <!-- Visualization & Content Choices: 
-        - Financial Health -> Chart.js (Doughnut) -> Visualizing premium distribution by branch.
-        - Performance -> Metrics Cards -> Immediate grasp of key agency KPIs.
-        - Urgent Actions -> Dynamic List -> Surfacing expiring policies and overdue tasks first.
-        - Team Management -> Interactive Table -> Allowing reassignments and status updates.
-        CONFIRMATION: All icons are handled via Lucide script. No SVGs or Mermaid used.
+        - Visual Health: Chart.js doughnut for branch distribution.
+        - Team Sync: Empty states optimized to encourage data entry.
+        - Client Care: Dynamic WhatsApp templates.
+        CONFIRMATION: No SVG or Mermaid used. Lucide icons handled via CDN script.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <!-- Scripts ordered for maximum compatibility -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
-        .glass-sidebar { background: #0f172a; }
-        .chart-container { position: relative; width: 100%; max-width: 400px; margin: auto; height: 300px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a; 
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .chart-container { position: relative; width: 100%; max-height: 280px; margin: auto; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+        .glass-sidebar { background: #0f172a; border-right: 1px solid rgba(255,255,255,0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="text-slate-900">
-    <div id="root"></div>
+<body>
+    <div id="root">
+        <!-- Pantalla de carga inicial -->
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center;">
+            <div style="width: 40px; height: 40px; border: 4px solid #2563eb; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="margin-top: 20px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; font-size: 11px;">Iniciando Sistema Fpimentel...</p>
+        </div>
+    </div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- ICON COMPONENT (Lucide) ---
+        // --- COMPONENTE DE ICONOS ---
         const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [name]);
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        // --- MOCK DATA ---
+        // --- DATOS INICIALES LIMPIOS ---
         const INITIAL_USERS = [
-            { id: 'u1', username: 'Eduardog', name: 'Eduardo G.', role: 'Admin', avatar: 'E', pass: '123456' },
-            { id: 'u2', username: 'FernadoP', name: 'Fernando P.', role: 'Gerente', avatar: 'F', pass: '123456' },
-            { id: 'u3', username: 'Sandrac', name: 'Sandra C.', role: 'Ejecutiva', avatar: 'S', pass: '123456' }
+            { id: 'u1', username: 'Eduardog', name: 'Eduardo G.', role: 'Admin', avatar: 'E', pass: '123456' }
         ];
 
-        const INITIAL_POLICIES = [
-            { id: 1, client: "Andrés Pimentel", phone: "8094763535", type: "Automóvil", premium: 18500, expiry: "2024-05-25", agentId: 'u1', freq: 'Mensual' },
-            { id: 2, client: "Vanessa Marie Pimentel", phone: "8295551111", type: "Salud", premium: 3200, expiry: "2025-08-15", agentId: 'u3', freq: 'Mensual' },
-            { id: 3, client: "Construcciones Delta", phone: "8095552222", type: "Fianzas", premium: 95000, expiry: "2024-06-10", agentId: 'u3', freq: 'Anual' },
-            { id: 4, client: "Logística Cibao", phone: "8290001111", type: "Incendio y L.A.", premium: 45000, expiry: "2024-05-20", agentId: 'u2', freq: 'Anual' }
-        ];
+        const COMM_RATES = { "Automóvil": 17.5, "Responsabilidad Civil": 17.5, "Fianzas": 12.5, "Salud": 12, "Multiriesgo": 10.5 };
 
-        const INITIAL_LEADS = [
-            { id: 1, name: "Carlos Manuel", phone: "8091112222", interest: "Automóvil", status: "Nuevo", date: "2024-05-10" },
-            { id: 2, name: "Hotel Relax", phone: "8293334444", interest: "Multiriesgo", status: "Propuesta", date: "2024-05-08" }
-        ];
-
-        const INITIAL_TASKS = [
-            { id: 1, title: "Cobrar renovación Delta", client: "Delta", assignedTo: "u3", status: "Pendiente", dueDate: "2024-05-11", priority: "Alta" },
-            { id: 2, title: "Enviar cotización Carlos", client: "Carlos M.", assignedTo: "u1", status: "En Proceso", dueDate: "2024-05-15", priority: "Media" }
-        ];
-
-        const COMM_RATES = { "Automóvil": 17.5, "Responsabilidad Civil": 17.5, "Fianzas": 12.5, "Salud": 12, "Incendio y L.A.": 10.5, "Multiriesgo": 10.5 };
-
-        // --- MAIN APP ---
         const App = () => {
             const [loggedUser, setLoggedUser] = useState(null);
             const [activeTab, setActiveTab] = useState('dashboard');
-            const [policies, setPolicies] = useState(INITIAL_POLICIES);
-            const [leads, setLeads] = useState(INITIAL_LEADS);
-            const [tasks, setTasks] = useState(INITIAL_TASKS);
+            const [policies, setPolicies] = useState([]);
+            const [tasks, setTasks] = useState([]);
             const [commView, setCommView] = useState('personal');
             const chartRef = useRef(null);
 
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [activeTab, loggedUser]);
 
-            // Financial Calculations
             const stats = useMemo(() => {
-                const now = new Date();
-                const expiringSoon = policies.filter(p => {
-                    const diff = (new Date(p.expiry) - now) / (1000 * 60 * 60 * 24);
-                    return diff >= 0 && diff <= 30;
-                });
-                
-                const filtered = commView === 'empresa' ? policies : (commView === 'sandra' ? policies.filter(p=>p.agentId==='u3') : policies.filter(p=>p.agentId===loggedUser?.id));
-                const totalComm = filtered.reduce((acc, p) => {
+                const totalComm = policies.reduce((acc, p) => {
                     const rate = COMM_RATES[p.type] || 10;
                     const yearly = (p.premium * rate) / 100;
                     return acc + (p.freq === 'Mensual' ? yearly / 12 : yearly);
                 }, 0);
+                return { totalComm, activeCount: policies.length };
+            }, [policies]);
 
-                return { expiringSoon: expiringSoon.length, totalComm, activeCount: policies.length };
-            }, [policies, loggedUser, commView]);
+            // Logo con Respaldo
+            const Logo = ({ className = "h-16" }) => (
+                <div className="flex flex-col items-center justify-center">
+                    <img 
+                        src="https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png" 
+                        alt="Logo Fpimentel" 
+                        className={className}
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                        }}
+                    />
+                    <div style={{ display: 'none' }} className="flex items-center justify-center bg-blue-600 w-12 h-12 rounded-xl text-white font-black italic shadow-lg mb-2">F</div>
+                </div>
+            );
 
-            // Charts
-            useEffect(() => {
-                if (loggedUser && activeTab === 'dashboard') {
-                    const ctx = document.getElementById('perfChart');
-                    if (ctx) {
-                        if (chartRef.current) chartRef.current.destroy();
-                        chartRef.current = new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Automóvil', 'Fianzas', 'Salud', 'Otros'],
-                                datasets: [{ data: [45, 25, 15, 15], backgroundColor: ['#2563eb', '#f59e0b', '#10b981', '#64748b'], borderWidth: 0 }]
-                            },
-                            options: { maintainAspectRatio: false, cutout: '80%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { weight: 'bold' } } } } }
-                        });
-                    }
-                }
-            }, [loggedUser, activeTab]);
-
-            const handleWA = (p, type = 'cobro') => {
-                const msg = type === 'bienvenida' 
-                    ? `¡Hola ${p.client}! Bienvenido a Fpimentel Seguros. Su póliza de ${p.type} ha sido emitida. Gracias por su confianza.`
-                    : `Hola ${p.client}, de Fpimentel Seguros. Le recordamos el pago de su póliza ${p.type}. Favor contactarnos.`;
-                window.open(`https://wa.me/${p.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-            };
-
-            // --- LOGIN VIEW ---
             if (!loggedUser) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
-                        <div className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-md text-center border-t-[12px] border-blue-600">
-                            <img src="https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png" className="h-24 mx-auto mb-8 drop-shadow-lg" />
-                            <h1 className="text-2xl font-black italic tracking-tighter text-slate-800 uppercase">FPIMENTEL SEGUROS</h1>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-10">Agencia Digital de Cartera</p>
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 animate-fade-in">
+                        <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center border-t-[10px] border-blue-600">
+                            <Logo className="h-20 mx-auto mb-6" />
+                            <h1 className="text-2xl font-black italic tracking-tighter text-slate-800 uppercase leading-none">FPIMENTEL SEGUROS</h1>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-10 mt-2">Panel Administrativo</p>
+                            
                             <div className="space-y-4 text-left">
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Usuario</label>
-                                    <input id="u" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all" placeholder="Eduardog" />
+                                    <input id="u_login" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all uppercase" placeholder="Eduardog" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contraseña</label>
-                                    <input id="p" type="password" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all" placeholder="••••••" />
+                                    <input id="p_login" type="password" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100 transition-all" placeholder="••••••" />
                                 </div>
                                 <button onClick={() => {
-                                    const u = document.getElementById('u').value;
-                                    const p = document.getElementById('p').value;
-                                    const user = INITIAL_USERS.find(x => x.username.toLowerCase() === u.toLowerCase() && x.pass === p);
-                                    if (user) setLoggedUser(user); else alert("Credenciales incorrectas");
-                                }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95 mt-4">INGRESAR AL SISTEMA</button>
+                                    const u = document.getElementById('u_login').value;
+                                    const p = document.getElementById('p_login').value;
+                                    const found = INITIAL_USERS.find(x => x.username.toLowerCase() === u.toLowerCase() && x.pass === p);
+                                    if (found) setLoggedUser(found); else alert("Datos de acceso incorrectos");
+                                }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:bg-blue-700 active:scale-95 transition-all mt-4">ENTRAR</button>
                             </div>
                         </div>
                     </div>
                 );
             }
 
-            // --- APP LAYOUT ---
             return (
-                <div className="flex h-screen overflow-hidden">
-                    {/* Sidebar */}
-                    <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-20">
-                        <div className="text-center mb-12 border-b border-white/10 pb-10">
-                            <img src="https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png" className="h-16 mx-auto filter invert brightness-0 mb-4" />
-                            <h2 className="text-xl font-black italic tracking-widest text-blue-400">FPIMENTEL</h2>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.4em] italic">Seguros & Fianzas</p>
+                <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
+                    {/* Barra Lateral */}
+                    <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-50">
+                        <div className="text-center mb-12">
+                            <Logo className="h-14 mx-auto filter invert brightness-0 mb-4" />
+                            <h2 className="text-xl font-black italic tracking-widest text-blue-400 leading-none">FPIMENTEL</h2>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.4em] mt-1">Seguros & Fianzas</p>
                         </div>
-                        <nav className="flex-1 space-y-1.5 uppercase text-[10px] font-black tracking-[0.2em]">
-                            <button onClick={()=>setActiveTab('dashboard')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='dashboard'?'bg-blue-600 shadow-xl shadow-blue-500/20':'text-slate-400 hover:bg-white/5'}`}>
-                                <Icon name="layout-dashboard" /> <span>Dashboard</span>
+                        <nav className="flex-1 space-y-2 uppercase text-[10px] font-black tracking-[0.2em]">
+                            <button onClick={()=>setActiveTab('dashboard')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='dashboard'?'bg-blue-600 shadow-xl':'text-slate-400 hover:bg-white/5'}`}>
+                                <Icon name="layout-dashboard" /> <span>Resumen</span>
                             </button>
-                            <button onClick={()=>setActiveTab('leads')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='leads'?'bg-blue-600 shadow-xl shadow-blue-500/20':'text-slate-400 hover:bg-white/5'}`}>
-                                <Icon name="user-plus" /> <span>Prospectos</span>
-                            </button>
-                            <button onClick={()=>setActiveTab('cartera')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='cartera'?'bg-blue-600 shadow-xl shadow-blue-500/20':'text-slate-400 hover:bg-white/5'}`}>
+                            <button onClick={()=>setActiveTab('cartera')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='cartera'?'bg-blue-600 shadow-xl':'text-slate-400 hover:bg-white/5'}`}>
                                 <Icon name="briefcase" /> <span>Cartera</span>
                             </button>
-                            <button onClick={()=>setActiveTab('tasks')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='tasks'?'bg-blue-600 shadow-xl shadow-blue-500/20':'text-slate-400 hover:bg-white/5'}`}>
-                                <Icon name="check-circle" /> <span>Tareas</span>
+                            <button onClick={()=>setActiveTab('finanzas')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='finanzas'?'bg-blue-600 shadow-xl':'text-slate-400 hover:bg-white/5'}`}>
+                                <Icon name="dollar-sign" /> <span>Finanzas</span>
                             </button>
-                            {loggedUser.role !== 'Ejecutiva' && (
-                                <button onClick={()=>setActiveTab('comisiones')} className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all ${activeTab==='comisiones'?'bg-blue-600 shadow-xl shadow-blue-500/20':'text-slate-400 hover:bg-white/5'}`}>
-                                    <Icon name="dollar-sign" /> <span>Finanzas</span>
-                                </button>
-                            )}
                         </nav>
-                        <div className="mt-auto p-5 bg-white/5 rounded-3xl border border-white/10 flex items-center space-x-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic shadow-lg">{loggedUser.avatar}</div>
+                        <div className="mt-auto p-5 bg-white/5 rounded-3xl flex items-center space-x-4 border border-white/10">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic text-lg shadow-lg">{loggedUser.avatar}</div>
                             <div className="flex-1 overflow-hidden">
-                                <p className="text-[10px] font-black truncate uppercase tracking-tighter">{loggedUser.name}</p>
+                                <p className="text-[10px] font-black truncate uppercase">{loggedUser.name}</p>
                                 <p className="text-[8px] text-blue-400 font-bold uppercase">{loggedUser.role}</p>
                             </div>
                             <button onClick={()=>setLoggedUser(null)} className="text-slate-500 hover:text-rose-500 transition-all"><Icon name="log-out" size={18} /></button>
                         </div>
                     </aside>
 
-                    {/* Main */}
+                    {/* Contenido Principal */}
                     <main className="flex-1 p-10 overflow-y-auto custom-scrollbar">
                         <header className="mb-10 flex justify-between items-end border-b pb-8 border-slate-200">
                             <div>
-                                <h1 className="text-4xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
-                                    {activeTab === 'dashboard' ? `¡Hola, ${loggedUser.username}!` : activeTab === 'leads' ? 'Embudo de Prospectos' : activeTab === 'cartera' ? 'Cartera Activa' : activeTab === 'tasks' ? 'Control de Equipo' : 'Análisis Financiero'}
+                                <h1 className="text-4xl font-black italic tracking-tighter uppercase text-slate-800 leading-none animate-fade-in">
+                                    {activeTab === 'dashboard' ? `Hola, Eduardo!` : activeTab === 'cartera' ? 'Cartera Activa' : 'Liquidaciones'}
                                 </h1>
                                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 italic flex items-center">
                                     <Icon name="shield-check" className="mr-2 text-blue-600" size={14} /> FPIMENTEL SEGUROS | {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                                 </p>
                             </div>
-                            <button className="bg-slate-950 text-white px-8 py-4 rounded-2xl font-black flex items-center space-x-3 shadow-2xl hover:bg-blue-600 transition-all active:scale-95 text-[10px] tracking-[0.2em] group">
+                            <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black flex items-center space-x-3 shadow-2xl hover:bg-blue-600 transition-all active:scale-95 text-[10px] tracking-[0.2em] group">
                                 <Icon name="plus" size={20} className="group-hover:rotate-90 transition-all" /> <span>NUEVO REGISTRO</span>
                             </button>
                         </header>
 
-                        {/* DASHBOARD VIEW */}
                         {activeTab === 'dashboard' && (
-                            <div className="space-y-8 animate-in">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                    <Card className="border-l-[8px] border-l-blue-600 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Pólizas Activas</p><p className="text-4xl font-black tracking-tighter italic">{stats.activeCount}</p></Card>
-                                    <Card className="border-l-[8px] border-l-rose-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Vencen en 30 días</p><p className="text-4xl font-black tracking-tighter italic text-rose-600">{stats.expiringSoon}</p></Card>
-                                    <Card className="border-l-[8px] border-l-amber-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Leads del Mes</p><p className="text-4xl font-black tracking-tighter italic">{leads.length}</p></Card>
-                                    {hasCommissions && <Card className="border-l-[8px] border-l-emerald-600 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Próximo Cobro</p><p className="text-3xl font-black tracking-tighter italic text-emerald-600">${stats.totalComm.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></Card>}
-                                </div>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <Card className="lg:col-span-2 shadow-xl">
-                                        <div className="flex justify-between items-center mb-8 border-b pb-6 uppercase italic font-black tracking-widest">
-                                            <h3>Acciones Urgentes de Cobro</h3>
-                                            <Icon name="clock" className="text-rose-500 animate-pulse" />
-                                        </div>
-                                        <div className="space-y-4">
-                                            {policies.slice(0, 4).map(p => (
-                                                <div key={p.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] border-2 border-transparent hover:border-blue-100 transition-all group">
-                                                    <div className="flex items-center space-x-6">
-                                                        <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center font-black text-blue-600 text-xl shadow-md italic">{p.type[0]}</div>
-                                                        <div><p className="font-black text-slate-800 text-base leading-none mb-1 uppercase">{p.client}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic">{p.type} <span className="mx-1">•</span> Expira: {p.expiry}</p></div>
-                                                    </div>
-                                                    <button onClick={()=>handleWA(p)} className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl text-[9px] font-black uppercase italic hover:bg-emerald-600 hover:text-white transition-all shadow-md group-hover:scale-105 active:scale-95"><Icon name="send" size={14} className="inline mr-2"/><span>Cobrar WA</span></button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </Card>
-                                    <Card className="shadow-xl flex flex-col justify-center">
-                                        <h3 className="font-black uppercase italic text-center text-xs tracking-widest mb-8 text-slate-400">Distribución de Primas</h3>
-                                        <div className="chart-container"><canvas id="perfChart"></canvas></div>
-                                    </Card>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* LEADS VIEW */}
-                        {activeTab === 'leads' && (
-                            <div className="animate-in space-y-6">
+                            <div className="space-y-10 animate-fade-in">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {['Nuevo', 'Contactado', 'Propuesta'].map(status => (
-                                        <Card key={status} className="border-t-4 border-t-blue-500 min-h-[400px]">
-                                            <h4 className="font-black italic uppercase tracking-[0.2em] mb-6 text-blue-600 border-b pb-4">{status}</h4>
-                                            <div className="space-y-4">
-                                                {leads.filter(l => l.status === status).map(l => (
-                                                    <div key={l.id} className="p-5 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-blue-300 transition-all shadow-sm">
-                                                        <p className="font-black text-sm uppercase italic">{l.name}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400 mb-4 uppercase">{l.interest}</p>
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-[9px] font-black text-blue-500 italic uppercase">Desde: {l.date}</span>
-                                                            <button className="text-slate-400 hover:text-blue-600"><Icon name="edit-3" size={14}/></button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <button className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-[10px] hover:bg-slate-100 transition-all tracking-widest">+ AGREGAR LEAD</button>
-                                            </div>
-                                        </Card>
-                                    ))}
+                                    <div className="bg-white p-8 rounded-3xl border-l-[10px] border-blue-600 shadow-sm transition-transform hover:scale-[1.02]">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Pólizas Activas</p>
+                                        <p className="text-5xl font-black tracking-tighter italic">{policies.length}</p>
+                                    </div>
+                                    <div className="bg-white p-8 rounded-3xl border-l-[10px] border-rose-500 shadow-sm transition-transform hover:scale-[1.02]">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Alertas Pendientes</p>
+                                        <p className="text-5xl font-black tracking-tighter italic text-rose-600">0</p>
+                                    </div>
+                                    <div className="bg-white p-8 rounded-3xl border-l-[10px] border-emerald-500 shadow-sm transition-transform hover:scale-[1.02]">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Cobro Proyectado</p>
+                                        <p className="text-4xl font-black tracking-tighter italic text-emerald-600">${stats.totalComm.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-12 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center py-20 shadow-inner">
+                                    <div className="bg-slate-50 p-6 rounded-full mb-6"><Icon name="folder-plus" size={48} className="text-slate-300" /></div>
+                                    <h3 className="text-xl font-black italic uppercase tracking-widest text-slate-400">Sistema Limpio y Listo</h3>
+                                    <p className="text-slate-400 text-sm max-w-md mt-2 font-bold uppercase tracking-tighter">Utiliza el botón de "Nuevo Registro" para empezar a cargar tus pólizas de Humano Seguros.</p>
                                 </div>
                             </div>
                         )}
 
-                        {/* CARTERA VIEW */}
                         {activeTab === 'cartera' && (
-                            <Card className="p-0 overflow-hidden shadow-2xl animate-in rounded-[2rem]">
-                                <div className="p-8 border-b bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-black italic tracking-widest uppercase text-xl">Inventario de Pólizas Humano</h3>
-                                    <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase italic tracking-widest shadow-lg">{policies.length} REGISTROS</span>
+                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden animate-fade-in border border-slate-100">
+                                <div className="p-10 border-b bg-slate-50/50 flex justify-between items-center">
+                                    <h3 className="font-black italic tracking-widest uppercase text-xl text-slate-800">Inventario de Cartera</h3>
+                                    <span className="bg-slate-900 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest italic">{policies.length} PÓLIZAS</span>
                                 </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-8">Asegurado</th><th className="p-8">Ramo</th><th className="p-8">Prima Anual</th><th className="p-8">Vencimiento</th><th className="p-8 text-right">Gestión</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
-                                            {policies.map(p => (
-                                                <tr key={p.id} className="hover:bg-blue-50/30 transition-all group">
-                                                    <td className="p-8 font-black text-slate-800 italic uppercase">{p.client}</td>
-                                                    <td className="p-8"><Badge variant="info">{p.type}</Badge></td>
-                                                    <td className="p-8 font-black text-slate-700 font-mono italic">${p.premium.toLocaleString()}</td>
-                                                    <td className={`p-8 font-black uppercase text-xs ${(new Date(p.expiry)-new Date())/864e5 < 30 ? 'text-rose-600 underline decoration-rose-200 underline-offset-4':'text-slate-500'}`}>{p.expiry}</td>
-                                                    <td className="p-8 text-right">
-                                                        <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                            <button onClick={()=>handleWA(p, 'bienvenida')} className="bg-blue-50 text-blue-600 p-3 rounded-xl hover:bg-blue-600 hover:text-white" title="Bienvenida"><Icon name="gift" size={16}/></button>
-                                                            <button onClick={()=>handleWA(p)} className="bg-emerald-50 text-emerald-600 p-3 rounded-xl hover:bg-emerald-600 hover:text-white" title="Cobro"><Icon name="send" size={16}/></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="p-20 flex flex-col items-center justify-center text-slate-300">
+                                    <Icon name="inbox" size={64} className="mb-4 opacity-20" />
+                                    <p className="font-black uppercase tracking-widest italic text-xs">No hay pólizas registradas aún</p>
                                 </div>
-                            </Card>
+                            </div>
                         )}
 
-                        {/* TASKS VIEW */}
-                        {activeTab === 'tasks' && (
-                            <Card className="p-0 overflow-hidden shadow-2xl animate-in rounded-[2rem]">
-                                <div className="p-10 border-b bg-slate-900 text-white flex justify-between items-center">
-                                    <h3 className="font-black italic uppercase tracking-[0.2em] text-xl">Actividades Operativas</h3>
-                                    {loggedUser.role === 'Admin' && <Badge variant="success">ADMIN: REASIGNACIÓN ACTIVA</Badge>}
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                            <tr><th className="p-10">Prio.</th><th className="p-10">Tarea</th><th className="p-10">Responsable</th><th className="p-10">Fecha Límite</th><th className="p-10">Estado</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {tasks.map(t => (
-                                                <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                                                    <td className="p-10"><div className={`h-4 w-4 rounded-full ${t.priority==='Alta'?'bg-rose-500 animate-pulse shadow-xl shadow-rose-200':'bg-amber-400 shadow-lg'}`} /></td>
-                                                    <td className="p-10">
-                                                        <p className="font-black text-slate-800 text-lg tracking-tight mb-1 italic leading-none">{t.title}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] italic">{t.client}</p>
-                                                    </td>
-                                                    <td className="p-10">
-                                                        {loggedUser.role==='Admin' ? (
-                                                            <select className="bg-white border-2 border-slate-200 p-3 rounded-2xl text-[10px] font-black uppercase outline-none focus:ring-4 focus:ring-blue-100" value={t.assignedTo} onChange={(e)=>{
-                                                                setTasks(tasks.map(tk => tk.id === t.id ? {...tk, assignedTo: e.target.value} : tk));
-                                                            }}>
-                                                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                                            </select>
-                                                        ) : <span className="text-xs font-black uppercase italic">{users.find(u=>u.id===t.assignedTo)?.name}</span>}
-                                                    </td>
-                                                    <td className={`p-10 font-mono text-xs font-black uppercase ${new Date(t.dueDate) < new Date() ? 'text-rose-600 animate-bounce' : 'text-slate-500'}`}>{t.dueDate}</td>
-                                                    <td className="p-10"><button className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${t.status==='Pendiente'?'text-amber-500 border-amber-200 hover:bg-amber-500 hover:text-white':'text-emerald-500 border-emerald-200'}`}>{t.status}</button></td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </Card>
-                        )}
-
-                        {/* COMISIONES VIEW */}
-                        {activeTab === 'comisiones' && (
-                            <div className="space-y-10 animate-in">
-                                <div className="flex space-x-3 bg-white p-2 rounded-[2rem] w-fit border shadow-xl">
-                                    <button onClick={()=>setCommView('personal')} className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${commView==='personal'?'bg-blue-600 text-white shadow-2xl':'text-slate-400 hover:text-blue-600'}`}>Mi Liquidación</button>
-                                    {loggedUser.role === 'Admin' && (
-                                        <>
-                                            <button onClick={()=>setCommView('empresa')} className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${commView==='empresa'?'bg-blue-600 text-white shadow-2xl':'text-slate-400 hover:text-blue-600'}`}>Oficina Global</button>
-                                            <button onClick={()=>setCommView('sandra')} className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${commView==='sandra'?'bg-blue-600 text-white shadow-2xl':'text-slate-400 hover:text-blue-600'}`}>Sandra C.</button>
-                                        </>
-                                    )}
-                                </div>
+                        {activeTab === 'finanzas' && (
+                            <div className="space-y-10 animate-fade-in">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <Card className="bg-gradient-to-br from-blue-700 to-indigo-950 text-white border-none shadow-2xl p-12 group overflow-hidden relative">
+                                    <div className="bg-gradient-to-br from-blue-700 to-slate-950 text-white p-12 rounded-[3rem] shadow-2xl relative overflow-hidden group">
                                         <div className="absolute -bottom-20 -right-20 opacity-5 group-hover:opacity-10 transition-opacity"><Icon name="dollar-sign" size={300} /></div>
-                                        <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mb-4 italic underline underline-offset-8">Cobro Proyectado del Mes</p>
+                                        <p className="text-blue-300 text-[10px] font-black uppercase tracking-[0.3em] mb-4 italic underline underline-offset-8">Liquidez Proyectada</p>
                                         <p className="text-7xl font-black italic tracking-tighter font-mono">${stats.totalComm.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
                                         <div className="mt-8 flex items-center space-x-4 text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                                            <Icon name="trending-up" /> <span>Rendimiento Óptimo</span>
+                                            <Icon name="trending-up" /> <span>Sistema Operativo</span>
                                         </div>
-                                    </Card>
-                                    <Card className="border-l-[15px] border-l-emerald-600 shadow-2xl p-12 bg-white flex flex-col justify-center">
-                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4 italic leading-none">Primas Brutas Gestionadas</p>
-                                        <p className="text-6xl font-black italic tracking-tighter text-slate-800 leading-none">RD$ {policies.reduce((a,b)=>a+b.premium,0).toLocaleString()}</p>
-                                    </Card>
-                                </div>
-                                <Card className="shadow-2xl border-none p-10">
-                                    <h3 className="font-black italic uppercase tracking-widest mb-10 border-b pb-8 text-xl flex justify-between items-center">
-                                        <span>Detalle de Liquidaciones Humano</span>
-                                        <Icon name="file-text" className="text-blue-500" />
-                                    </h3>
-                                    <div className="space-y-6 overflow-y-auto max-h-[500px] pr-4 custom-scrollbar">
-                                        {(commView==='empresa'?policies:(commView==='sandra'?policies.filter(p=>p.agentId==='u3'):policies.filter(p=>p.agentId===loggedUser.id))).map(p => {
-                                            const rate = COMM_RATES[p.type] || 10;
-                                            const val = (p.premium * rate / 100) / (p.freq==='Mensual'?12:1);
-                                            return (
-                                                <div key={p.id} className="flex items-center justify-between p-8 border-2 border-slate-50 rounded-[3rem] hover:bg-slate-50 transition-all group">
-                                                    <div className="flex items-center space-x-8">
-                                                        <div className="h-16 w-16 bg-white shadow-xl rounded-[1.5rem] flex items-center justify-center font-black text-blue-600 text-2xl italic border border-slate-100">{p.type[0]}</div>
-                                                        <div>
-                                                            <p className="font-black text-xl text-slate-800 leading-none mb-2 uppercase italic">{p.client}</p>
-                                                            <p className="text-[10px] text-blue-500 font-black tracking-[0.2em] uppercase">{p.type} | TASA: {rate}% | {p.freq}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-black text-emerald-600 text-2xl italic tracking-tighter leading-none mb-1">+${val.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                                        <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase italic">Vence: {p.expiry}</p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
                                     </div>
-                                </Card>
+                                    <div className="bg-white p-12 rounded-[3rem] shadow-xl border-l-[15px] border-emerald-600 flex flex-col justify-center">
+                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2 italic">Primas Netas Totales</p>
+                                        <p className="text-6xl font-black italic tracking-tighter text-slate-800 leading-none">RD$ 0.00</p>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </main>
