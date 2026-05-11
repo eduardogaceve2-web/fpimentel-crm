@@ -59,8 +59,9 @@
             const [loggedUser, setLoggedUser] = useState(null);
             const [activeTab, setActiveTab] = useState('dashboard');
             const [showModal, setShowModal] = useState(false);
-            const [modalType, setModalType] = useState('policy'); // 'policy' o 'lead'
+            const [modalType, setModalType] = useState('policy'); 
             
+            // --- ESTADOS PRINCIPALES ---
             const [users, setUsers] = useState([
                 { id: 'u1', username: 'Eduardog', name: 'Eduardo G.', role: 'Admin', avatar: 'E', pass: '123456' }
             ]);
@@ -96,21 +97,18 @@
 
             const commissionStats = useMemo(() => {
                 const breakdown = { Mensual: 0, Trimestral: 0, Anual: 0, Total: 0 };
-                
                 policies.forEach(p => {
                     const rate = branches.find(b => b.name === p.branch)?.commission || 10;
                     const commissionAmount = (p.premium * rate) / 100;
-                    
                     if (p.freq === 'Mensual') breakdown.Mensual += (commissionAmount / 12);
                     else if (p.freq === 'Trimestral') breakdown.Trimestral += (commissionAmount / 4);
                     else breakdown.Anual += commissionAmount;
-                    
                     breakdown.Total += commissionAmount;
                 });
-                
                 return breakdown;
             }, [policies, branches]);
 
+            // --- MANEJADORES DE FORMULARIOS ---
             const handleNewRecord = (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -140,6 +138,46 @@
                 setShowModal(false);
             };
 
+            const handleAddBranch = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const name = formData.get('branch_name');
+                const comm = parseFloat(formData.get('branch_comm'));
+                if (name && !isNaN(comm)) {
+                    setBranches([...branches, { name, commission: comm }]);
+                    e.target.reset();
+                }
+            };
+
+            const handleAddUser = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const name = formData.get('user_full_name');
+                const username = formData.get('user_login');
+                const role = formData.get('user_role');
+                const pass = formData.get('user_pass');
+                if (name && username && pass) {
+                    setUsers([...users, { 
+                        id: 'u' + Date.now(), 
+                        username, 
+                        name, 
+                        role, 
+                        avatar: name.charAt(0).toUpperCase(), 
+                        pass 
+                    }]);
+                    e.target.reset();
+                }
+            };
+
+            const deleteBranch = (name) => {
+                setBranches(branches.filter(b => b.name !== name));
+            };
+
+            const deleteUser = (id) => {
+                if (id === 'u1') return; // No borrar al admin principal
+                setUsers(users.filter(u => u.id !== id));
+            };
+
             if (!loggedUser) {
                 return (
                     <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
@@ -163,6 +201,7 @@
 
             return (
                 <div className="flex h-screen overflow-hidden">
+                    {/* Sidebar */}
                     <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-50">
                         <div className="text-center mb-12 border-b border-white/5 pb-8">
                             <Logo className="h-16 mx-auto filter invert brightness-0 mb-4" />
@@ -185,7 +224,7 @@
                             </button>
                             {loggedUser.role === 'Admin' && (
                                 <button onClick={()=>setActiveTab('config')} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab==='config'?'bg-blue-600 shadow-xl':'text-slate-400 hover:bg-white/5'}`}>
-                                    <i data-lucide="settings" className="w-5 h-5"></i> <span>Ajustes</span>
+                                    <i data-lucide="settings" className="w-5 h-5"></i> <span>Configuración</span>
                                 </button>
                             )}
                         </nav>
@@ -203,10 +242,10 @@
                         <header className="mb-10 flex justify-between items-end border-b pb-8 border-slate-200 animate-in">
                             <div className="text-left">
                                 <h1 className="text-4xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
-                                    {activeTab === 'dashboard' ? 'Control Central' : activeTab === 'leads' ? 'Prospectos' : activeTab === 'finanzas' ? 'Hoja de Comisiones' : 'Operaciones'}
+                                    {activeTab === 'dashboard' ? 'Control Central' : activeTab === 'leads' ? 'Prospectos' : activeTab === 'finanzas' ? 'Hoja de Comisiones' : activeTab === 'config' ? 'Configuración' : 'Operaciones'}
                                 </h1>
                                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 italic flex items-center">
-                                    <i data-lucide="shield-check" className="w-3 h-3 mr-2 text-blue-600"></i> Fpimentel Seguros | {loggedUser.name}
+                                    <i data-lucide="shield-check" className="w-3 h-3 mr-2 text-blue-600"></i> Fpimentel Seguros | Sesión: {loggedUser.username}
                                 </p>
                             </div>
                             <button onClick={() => setShowModal(true)} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-2xl hover:bg-blue-600 transition-all text-[10px] tracking-[0.2em] group">
@@ -226,24 +265,21 @@
                             </div>
                         )}
 
-                        {/* --- MODULO FINANZAS (DESGLOSE TOTAL) --- */}
+                        {/* --- MODULO FINANZAS --- */}
                         {activeTab === 'finanzas' && (
                             <div className="space-y-10 animate-in text-left">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-blue-500">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Comisión Mensual Proyectada</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Mensual Proyectado</p>
                                         <p className="text-5xl font-black italic tracking-tighter text-blue-600 font-mono">$RD {commissionStats.Mensual.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                        <p className="text-[10px] mt-4 text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Basado en todas las pólizas con frecuencia mensual activa.</p>
                                     </div>
                                     <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-t-amber-500">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Liquidación Trimestral</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Trimestral</p>
                                         <p className="text-5xl font-black italic tracking-tighter text-amber-600 font-mono">$RD {commissionStats.Trimestral.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                        <p className="text-[10px] mt-4 text-slate-400 font-bold uppercase tracking-widest italic leading-relaxed">Cálculo de ingresos netos por cierre de trimestres.</p>
                                     </div>
                                     <div className="bg-[#0f172a] p-10 rounded-[2.5rem] shadow-xl text-white border-t-8 border-t-emerald-500">
-                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 italic text-emerald-400">Cartera Anual Total (Humano)</p>
+                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 italic text-emerald-400">Total Anual</p>
                                         <p className="text-5xl font-black italic tracking-tighter font-mono">$RD {commissionStats.Anual.toLocaleString(undefined, {minimumFractionDigits:2})}</p>
-                                        <p className="text-[10px] mt-4 text-slate-500 font-bold uppercase tracking-widest italic leading-relaxed">Suma total de comisiones anuales cerradas.</p>
                                     </div>
                                 </div>
 
@@ -293,43 +329,79 @@
                             </div>
                         )}
 
-                        {/* --- MODULO CONFIGURACION --- */}
+                        {/* --- MODULO CONFIGURACION (FUNCIONAL) --- */}
                         {activeTab === 'config' && (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-in text-left">
+                                {/* GESTION DE RAMOS */}
                                 <div className="bg-white p-10 rounded-[3rem] shadow-xl border">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-blue-600">Tarifas Humano</h3>
-                                    <div className="space-y-4">
+                                    <div className="flex justify-between items-center mb-8 border-b pb-6">
+                                        <h3 className="font-black italic uppercase tracking-widest text-lg text-blue-600">Tasas de Comisión</h3>
+                                        <i data-lucide="percent" className="text-blue-200"></i>
+                                    </div>
+                                    <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
                                         {branches.map((b, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{b.name}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <input value={b.commission} type="number" step="0.1" className="w-16 p-2 rounded-xl text-center font-black text-blue-600 text-xs bg-white border outline-none" onChange={(e) => {
-                                                        const newB = [...branches];
-                                                        newB[idx].commission = parseFloat(e.target.value) || 0;
-                                                        setBranches(newB);
-                                                    }} />
-                                                    <span className="text-[10px] font-black text-slate-300">%</span>
+                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl group transition-all hover:bg-white hover:shadow-md">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">{b.name}</p>
+                                                    <p className="text-[11px] font-bold text-blue-600">{b.commission}% Comisión</p>
                                                 </div>
+                                                <button onClick={() => deleteBranch(b.name)} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border text-left">
-                                    <h3 className="font-black italic uppercase tracking-widest text-lg mb-8 border-b pb-6 text-emerald-600">Accesos</h3>
-                                    {users.map(u => (
-                                        <div key={u.id} className="flex items-center gap-4 p-5 bg-slate-50 rounded-[2rem] mb-4">
-                                            <div className="w-12 h-12 bg-slate-950 flex items-center justify-center text-white font-black text-lg italic rounded-xl">{u.avatar}</div>
-                                            <div>
-                                                <p className="font-black text-slate-800 text-sm leading-none">{u.name}</p>
-                                                <p className="text-[9px] font-black text-emerald-500 uppercase italic mt-1">{u.role}</p>
-                                            </div>
+                                    <form onSubmit={handleAddBranch} className="space-y-4 pt-6 border-t border-dashed">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Añadir Nuevo Ramo</p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input name="branch_name" required placeholder="Ej: Vida" className="p-4 bg-slate-50 border rounded-2xl text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-blue-50" />
+                                            <input name="branch_comm" type="number" step="0.1" required placeholder="% Comisión" className="p-4 bg-slate-50 border rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-50" />
                                         </div>
-                                    ))}
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20">Agregar Ramo</button>
+                                    </form>
+                                </div>
+
+                                {/* GESTION DE USUARIOS */}
+                                <div className="bg-white p-10 rounded-[3rem] shadow-xl border">
+                                    <div className="flex justify-between items-center mb-8 border-b pb-6 text-emerald-600">
+                                        <h3 className="font-black italic uppercase tracking-widest text-lg">Accesos Equipo</h3>
+                                        <i data-lucide="user-cog" className="text-emerald-200"></i>
+                                    </div>
+                                    <div className="space-y-4 mb-10 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
+                                        {users.map(u => (
+                                            <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-[2rem] group">
+                                                <div className="flex items-center gap-4 text-left">
+                                                    <div className="w-10 h-10 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-xl">{u.avatar}</div>
+                                                    <div>
+                                                        <p className="font-black text-slate-800 text-xs leading-none uppercase">{u.name}</p>
+                                                        <p className="text-[9px] font-black text-emerald-500 uppercase italic mt-1">{u.role}</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => deleteUser(u.id)} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <form onSubmit={handleAddUser} className="space-y-4 pt-6 border-t border-dashed">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Registrar Colaborador</p>
+                                        <input name="user_full_name" required placeholder="Nombre Completo" className="w-full p-4 bg-slate-50 border rounded-2xl text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-emerald-50" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input name="user_login" required placeholder="ID Usuario" className="p-4 bg-slate-50 border rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-50" />
+                                            <select name="user_role" className="p-4 bg-slate-50 border rounded-2xl text-[9px] font-black uppercase outline-none">
+                                                <option>Ejecutiva</option>
+                                                <option>Gerente</option>
+                                                <option>Admin</option>
+                                            </select>
+                                        </div>
+                                        <input name="user_pass" type="password" required placeholder="Contraseña Temporal" className="w-full p-4 bg-slate-50 border rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-50" />
+                                        <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/20">Crear Acceso</button>
+                                    </form>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- MODAL NUEVO REGISTRO --- */}
+                        {/* --- MODAL NUEVO REGISTRO (FUNCIONAL) --- */}
                         {showModal && (
                             <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-in">
                                 <div className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)] border-t-[15px] border-t-slate-900">
@@ -337,11 +409,11 @@
                                         <div>
                                             <h2 className="text-2xl font-black italic uppercase tracking-tighter text-slate-800">Emisión de Cartera</h2>
                                             <div className="flex gap-4 mt-2">
-                                                <button onClick={()=>setModalType('policy')} className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${modalType==='policy'?'bg-slate-900 text-white':'text-slate-400'}`}>Póliza</button>
-                                                <button onClick={()=>setModalType('lead')} className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${modalType==='lead'?'bg-slate-900 text-white':'text-slate-400'}`}>Lead</button>
+                                                <button onClick={()=>setModalType('policy')} className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all ${modalType==='policy'?'bg-slate-900 text-white':'text-slate-400 bg-slate-50'}`}>Póliza</button>
+                                                <button onClick={()=>setModalType('lead')} className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all ${modalType==='lead'?'bg-slate-900 text-white':'text-slate-400 bg-slate-50'}`}>Lead</button>
                                             </div>
                                         </div>
-                                        <button onClick={()=>setShowModal(false)} className="text-slate-300 hover:text-rose-500"><i data-lucide="x" className="w-8 h-8"></i></button>
+                                        <button onClick={()=>setShowModal(false)} className="text-slate-300 hover:text-rose-500 transition-all"><i data-lucide="x" className="w-8 h-8"></i></button>
                                     </div>
                                     <form onSubmit={handleNewRecord} className="space-y-6 text-left">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,19 +426,19 @@
                                                 <input name="phone" required placeholder="809XXXXXXX" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ramo</label>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ramo Humano</label>
                                                 <select name="branch" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs">
-                                                    {branches.map(b=><option key={b.name}>{b.name}</option>)}
+                                                    {branches.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}
                                                 </select>
                                             </div>
                                             {modalType === 'policy' && (
                                                 <>
                                                     <div className="space-y-1">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prima Anual Bruta</label>
+                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prima Anual Bruta ($RD)</label>
                                                         <input name="premium" type="number" step="0.01" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia</label>
+                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frecuencia Pago</label>
                                                         <select name="freq" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-black uppercase text-xs">
                                                             <option>Mensual</option>
                                                             <option>Trimestral</option>
@@ -374,7 +446,7 @@
                                                         </select>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimiento</label>
+                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Vencimiento</label>
                                                         <input name="expiry" type="date" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-100" />
                                                     </div>
                                                 </>
