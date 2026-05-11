@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fpimentel Seguros CRM - Executive Edition</title>
+    <title>Fpimentel Seguros CRM - Edición Elite</title>
     <!-- Chosen Palette: Navy Executive (Slate 950, Royal Blue 600, Success Emerald 500, Alert Amber 500, Rose 500) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,23 +14,26 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .glass-sidebar { background: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f8fafc; }
+        .glass-sidebar { background: #020617; border-right: 1px solid rgba(255,255,255,0.05); }
         .chart-container { position: relative; width: 100%; max-height: 280px; margin: auto; }
-        .kanban-col { min-height: 500px; background: rgba(241, 245, 249, 0.4); border: 2px dashed #e2e8f0; border-radius: 2rem; padding: 1.5rem; }
+        .kanban-col { min-height: 550px; background: rgba(15, 23, 42, 0.6); border-radius: 2.5rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.03); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeIn 0.4s ease-out forwards; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .top-rank-badge { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .executive-card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); border-radius: 2.5rem; box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5); transition: all 0.3s ease; }
+        .executive-card:hover { border-color: rgba(37, 99, 235, 0.3); transform: translateY(-2px); }
+        .table-row-hover:hover { background: rgba(37, 99, 235, 0.05); }
+        .btn-glow:hover { box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
     </style>
 </head>
-<body class="text-slate-900">
+<body>
     <div id="root">
-        <div class="h-screen flex items-center justify-center bg-slate-950 text-white text-center">
-            <div>
-                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                <p class="font-black uppercase tracking-widest text-xs opacity-50 italic text-blue-400">Sincronizando Sistema Fpimentel...</p>
+        <div class="h-screen flex items-center justify-center bg-slate-950">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6 shadow-[0_0_20px_rgba(37,99,235,0.3)]"></div>
+                <p class="font-black uppercase tracking-[0.4em] text-[10px] text-blue-500 italic">Iniciando Ecosistema Fpimentel</p>
             </div>
         </div>
     </div>
@@ -38,71 +41,68 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- COMPONENTE LOGO CON TU NUEVA IMAGEN ---
-        const Logo = ({ className = "h-14", textVisible = true }) => {
-            const [imgError, setImgError] = useState(false);
-            return (
-                <div className="flex flex-col items-center gap-2">
-                    {!imgError ? (
-                        <img 
-                            src="https://api.typedream.com/v0/document/public/eb0f44b3-8872-4212-a1d1-2f07067a8c57_Imagen_Oscuro_png.png" 
-                            className={className}
-                            onError={() => setImgError(true)}
-                        />
-                    ) : (
-                        <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-blue-600 font-black italic shadow-2xl border-4 border-blue-500 mb-2">F</div>
-                    )}
-                    {textVisible && <span className="text-blue-400 font-black tracking-[0.3em] text-[9px] uppercase italic">Fpimentel Seguros</span>}
-                </div>
-            );
-        };
+        // --- LOGO SVG PREMIUM (BASADO EN TU IMAGEN) ---
+        const AppLogo = ({ className = "w-12 h-12", color = "#3b82f6" }) => (
+            <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 15L15 45V85H35V60H65V85H85V45L50 15Z" stroke={color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M45 45C45 45 55 45 55 55C55 65 45 65 45 75" stroke={color} strokeWidth="6" strokeLinecap="round"/>
+                <circle cx="50" cy="40" r="3" fill={color}/>
+            </svg>
+        );
 
         const App = () => {
             const [loggedUser, setLoggedUser] = useState(null);
             const [activeTab, setActiveTab] = useState('dashboard');
             const [showModal, setShowModal] = useState(false);
-            const [modalType, setModalType] = useState('policy'); 
+            const [modalType, setModalType] = useState('policy');
 
-            // --- ESTADOS DE DATOS ---
-            const [users, setUsers] = useState([
+            // --- ESTADOS CON AUTO-GUARDADO ---
+            const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem('f_crm_users')) || [
                 { id: 'u1', username: 'Eduardog', name: 'Eduardo G.', role: 'Admin', avatar: 'E', pass: '123456' }
             ]);
 
-            const [branches, setBranches] = useState([
+            const [branches, setBranches] = useState(() => JSON.parse(localStorage.getItem('f_crm_branches')) || [
                 { name: "Automóvil", commission: 17.5 },
                 { name: "Fianzas", commission: 12.5 },
                 { name: "Salud", commission: 12.0 },
                 { name: "Hogar", commission: 10.5 },
-                { name: "PYME", commission: 10.5 }
+                { name: "Multiriesgo", commission: 10.5 }
             ]);
 
-            const [leads, setLeads] = useState([
+            const [leads, setLeads] = useState(() => JSON.parse(localStorage.getItem('f_crm_leads')) || [
                 { id: 1, name: "Andrés Pimentel", status: "Nuevo", branch: "Automóvil", phone: "8094763535", date: "2024-05-11" },
-                { id: 2, name: "Empresa Corporativa SA", status: "Propuesta", branch: "Fianzas", phone: "8295551122", date: "2024-05-10" },
-                { id: 3, name: "Hotel Playa Azul", status: "Perdido", branch: "Hogar", phone: "8090002222", date: "2024-05-01" }
+                { id: 2, name: "Inmobiliaria Real", status: "Propuesta", branch: "Fianzas", phone: "8295551122", date: "2024-05-10" }
             ]);
 
-            const [policies, setPolicies] = useState([
+            const [policies, setPolicies] = useState(() => JSON.parse(localStorage.getItem('f_crm_policies')) || [
                 { id: 101, client: "Don Fernando Pimentel", branch: "Multiriesgo", premium: 125000, expiry: "2024-06-15", agent: "Eduardog", phone: "8095550000", freq: 'Anual' },
-                { id: 102, client: "Andrés Pimentel", branch: "Automóvil", premium: 18500, expiry: "2024-12-20", agent: "Eduardog", phone: "8094763535", freq: 'Mensual' },
-                { id: 103, client: "Vanessa Marie", branch: "Salud", premium: 4500, expiry: "2025-01-10", agent: "Eduardog", phone: "8090001111", freq: 'Mensual' }
+                { id: 102, client: "Vanessa Marie", branch: "Salud", premium: 4500, expiry: "2025-01-10", agent: "Eduardog", phone: "8090001111", freq: 'Mensual' }
             ]);
+
+            const [contacts, setContacts] = useState(() => JSON.parse(localStorage.getItem('f_crm_contacts')) || [
+                { id: 1, name: "Andrés Pimentel", phone: "8094763535", email: "andres@mail.com", notes: "Padre - VIP" },
+                { id: 2, name: "Vanessa Marie Pimentel", phone: "8090001111", email: "vanessa@mail.com", notes: "Novia - VIP" }
+            ]);
+
+            useEffect(() => {
+                localStorage.setItem('f_crm_users', JSON.stringify(users));
+                localStorage.setItem('f_crm_branches', JSON.stringify(branches));
+                localStorage.setItem('f_crm_leads', JSON.stringify(leads));
+                localStorage.setItem('f_crm_policies', JSON.stringify(policies));
+                localStorage.setItem('f_crm_contacts', JSON.stringify(contacts));
+            }, [users, branches, leads, policies, contacts]);
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
 
-            // --- LÓGICA DE ESTADÍSTICAS ---
+            // --- ANALYTICS ---
             const stats = useMemo(() => {
-                const breakdown = { Mensual: 0, Trimestral: 0, Anual: 0, Total: 0 };
+                const breakdown = { Mensual: 0, Total: 0 };
                 const byBranch = {};
                 
                 policies.forEach(p => {
                     const rate = branches.find(b => b.name === p.branch)?.commission || 10;
                     const comm = (p.premium * rate) / 100;
-                    
                     if (p.freq === 'Mensual') breakdown.Mensual += (comm / 12);
-                    else if (p.freq === 'Trimestral') breakdown.Trimestral += (comm / 4);
-                    else breakdown.Anual += comm;
-                    
                     breakdown.Total += comm;
                     byBranch[p.branch] = (byBranch[p.branch] || 0) + comm;
                 });
@@ -110,11 +110,7 @@
                 const top5 = [...policies]
                     .map(p => {
                         const rate = branches.find(b => b.name === p.branch)?.commission || 10;
-                        return { 
-                            ...p, 
-                            rate,
-                            commValue: (p.premium * rate) / 100 
-                        }
+                        return { ...p, rate, commValue: (p.premium * rate) / 100 };
                     })
                     .sort((a, b) => b.commValue - a.commValue)
                     .slice(0, 5);
@@ -122,7 +118,7 @@
                 return { breakdown, byBranch, top5 };
             }, [policies, branches]);
 
-            // --- GRÁFICOS ---
+            // --- CHARTS ENGINE ---
             useEffect(() => {
                 if (loggedUser && (activeTab === 'dashboard' || activeTab === 'finanzas')) {
                     const canvasId = activeTab === 'dashboard' ? 'dashChart' : 'financeChart';
@@ -136,25 +132,20 @@
                             data: {
                                 labels: Object.keys(stats.byBranch),
                                 datasets: [{
-                                    label: 'Monto RD$',
                                     data: Object.values(stats.byBranch),
-                                    backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#6366f1', '#f43f5e', '#ef4444'],
+                                    backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#6366f1', '#f43f5e', '#ef4444', '#06b6d4'],
                                     borderWidth: 0,
-                                    borderRadius: activeTab === 'finanzas' ? 12 : 0
+                                    borderRadius: 10
                                 }]
                             },
                             options: { 
                                 maintainAspectRatio: false, 
                                 plugins: { 
-                                    legend: { 
-                                        position: 'bottom', 
-                                        display: activeTab === 'dashboard',
-                                        labels: { font: { weight: 'bold', size: 10 } }
-                                    } 
+                                    legend: { display: activeTab === 'dashboard', position: 'bottom', labels: { color: '#94a3b8', font: { weight: '700', size: 10 } } }
                                 },
                                 scales: activeTab === 'finanzas' ? {
-                                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                                    x: { grid: { display: false } }
+                                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569', font: { weight: 'bold' } } },
+                                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
                                 } : {}
                             }
                         });
@@ -164,8 +155,8 @@
 
             const triggerWA = (type, data) => {
                 let msg = type === 'renovacion' 
-                    ? `Hola ${data.client}, su póliza de ${data.branch} vence el ${data.expiry}. ¿Desea renovar con Fpimentel Seguros?`
-                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros.`;
+                    ? `Hola ${data.client}, le saludamos de Fpimentel Seguros. Su póliza de ${data.branch} está próxima a renovarse. ¿Procedemos?`
+                    : `¡Hola ${data.name}! Un gusto saludarte de Fpimentel Seguros. ¿Cómo va todo?`;
                 window.open(`https://wa.me/${data.phone}?text=${encodeURIComponent(msg)}`, '_blank');
             };
 
@@ -173,32 +164,29 @@
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 if (modalType === 'policy') {
-                    setPolicies([...policies, { id: Date.now(), client: fd.get('client'), branch: fd.get('branch'), premium: parseFloat(fd.get('premium')), expiry: fd.get('expiry'), phone: fd.get('phone'), freq: fd.get('freq'), agent: loggedUser.username }]);
+                    setPolicies([{ id: Date.now(), client: fd.get('client'), branch: fd.get('branch'), premium: parseFloat(fd.get('premium')), expiry: fd.get('expiry'), phone: fd.get('phone'), freq: fd.get('freq'), agent: loggedUser.username }, ...policies]);
                 } else if (modalType === 'lead') {
-                    setLeads([...leads, { id: Date.now(), name: fd.get('client'), branch: fd.get('branch'), phone: fd.get('phone'), status: 'Nuevo', date: new Date().toLocaleDateString() }]);
+                    setLeads([{ id: Date.now(), name: fd.get('client'), branch: fd.get('branch'), phone: fd.get('phone'), status: 'Nuevo', date: new Date().toLocaleDateString() }, ...leads]);
+                } else if (modalType === 'contact') {
+                    setContacts([{ id: Date.now(), name: fd.get('client'), phone: fd.get('phone'), email: fd.get('email') || '', notes: fd.get('notes') || '' }, ...contacts]);
                 }
                 setShowModal(false);
             };
 
             if (!loggedUser) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
-                        <div className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-md text-center border-t-[15px] border-t-blue-600 animate-in">
-                            <Logo className="h-24 mx-auto mb-6" />
-                            <h1 className="text-3xl font-black italic tracking-tighter text-slate-800 uppercase mb-8 leading-none">Fpimentel CRM</h1>
-                            <div className="space-y-4">
-                                <div className="text-left space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Usuario Administrador</label>
-                                    <input id="u_log" placeholder="Eduardog" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-8 focus:ring-blue-50 transition-all uppercase" />
-                                </div>
-                                <div className="text-left space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Clave de Acceso</label>
-                                    <input id="p_log" type="password" placeholder="••••••" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-8 focus:ring-blue-50 transition-all" />
-                                </div>
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-[#020617] font-sans">
+                        <div className="bg-[#0f172a] p-12 rounded-[3.5rem] shadow-2xl w-full max-w-md text-center border border-white/5 animate-in">
+                            <div className="mb-10 flex justify-center"><AppLogo className="w-24 h-24" color="#3b82f6" /></div>
+                            <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase mb-2">FPIMENTEL CRM</h1>
+                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.5em] mb-12">Portal de Acceso Elite</p>
+                            <div className="space-y-5 text-left">
+                                <input id="u_log" placeholder="Usuario" className="w-full p-5 bg-slate-900 border border-white/5 rounded-3xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-600/20 text-white transition-all shadow-inner" />
+                                <input id="p_log" type="password" placeholder="Contraseña" className="w-full p-5 bg-slate-900 border border-white/5 rounded-3xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-600/20 text-white transition-all shadow-inner" />
                                 <button onClick={() => {
                                     const user = users.find(x => x.username.toLowerCase() === document.getElementById('u_log').value.toLowerCase() && x.pass === document.getElementById('p_log').value);
-                                    if (user) setLoggedUser(user); else alert("Acceso denegado: Datos incorrectos");
-                                }} className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-2xl active:scale-95 transition-all mt-6">ENTRAR AL SISTEMA</button>
+                                    if (user) setLoggedUser(user); else alert("Credenciales incorrectas.");
+                                }} className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-blue-500 shadow-2xl shadow-blue-900/40 active:scale-95 transition-all mt-6 btn-glow">ENTRAR AL SISTEMA</button>
                             </div>
                         </div>
                     </div>
@@ -206,47 +194,50 @@
             }
 
             return (
-                <div className="flex h-screen overflow-hidden text-left font-sans">
-                    {/* Sidebar NAVEGACIÓN */}
+                <div className="flex h-screen overflow-hidden text-left bg-[#020617]">
+                    {/* Sidebar Sidebar */}
                     <aside className="w-72 glass-sidebar text-white flex flex-col p-8 shrink-0 shadow-2xl relative z-50">
-                        <div className="text-center mb-12 border-b border-white/5 pb-10">
-                            <Logo className="h-16 mx-auto filter invert brightness-0 mb-4" />
+                        <div className="text-center mb-12 border-b border-white/5 pb-10 flex flex-col items-center">
+                            <AppLogo className="w-16 h-16 mb-4" color="#60a5fa" />
+                            <h2 className="text-xl font-black italic tracking-widest text-blue-400">FPIMENTEL</h2>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.4em] italic mt-1 leading-none">Seguros & Fianzas</p>
                         </div>
                         <nav className="flex-1 space-y-1.5 uppercase text-[10px] font-black tracking-[0.2em]">
                             {[
-                                { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
-                                { id: 'leads', icon: 'users', label: 'Leads' },
-                                { id: 'pipeline', icon: 'trending-up', label: 'Pipeline' },
+                                { id: 'dashboard', icon: 'layout-dashboard', label: 'Resumen' },
+                                { id: 'contacts', icon: 'contact-2', label: 'Agenda' },
+                                { id: 'leads', icon: 'users', label: 'Prospectos' },
+                                { id: 'pipeline', icon: 'trending-up', label: 'Embudo' },
                                 { id: 'cartera', icon: 'briefcase', label: 'Cartera' },
                                 { id: 'finanzas', icon: 'dollar-sign', label: 'Finanzas' },
                                 { id: 'config', icon: 'settings', label: 'Ajustes' }
                             ].map(item => (
-                                <button key={item.id} onClick={()=>setActiveTab(item.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab===item.id?'bg-blue-600 shadow-xl':'text-slate-400 hover:bg-white/5'}`}>
+                                <button key={item.id} onClick={()=>setActiveTab(item.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab===item.id?'bg-blue-600 shadow-xl shadow-blue-900/40':'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
                                     <i data-lucide={item.icon} className="w-5 h-5"></i> <span>{item.label}</span>
                                 </button>
                             ))}
                         </nav>
-                        <div className="mt-auto p-5 bg-white/5 rounded-3xl border border-white/10 flex items-center gap-4 shadow-inner">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-xl uppercase">{loggedUser.avatar}</div>
+                        <div className="mt-auto p-4 bg-white/5 rounded-3xl border border-white/10 flex items-center gap-4 shadow-inner">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black italic text-white shadow-lg uppercase">{loggedUser.avatar}</div>
                             <div className="flex-1 overflow-hidden">
                                 <p className="text-[10px] font-black truncate uppercase tracking-tighter leading-none">{loggedUser.name}</p>
-                                <p className="text-[8px] text-blue-400 font-bold uppercase mt-1 italic tracking-widest">{loggedUser.role}</p>
+                                <p className="text-[8px] text-blue-400 font-bold uppercase mt-1 italic tracking-widest opacity-60">{loggedUser.role}</p>
                             </div>
-                            <button onClick={()=>setLoggedUser(null)} className="text-slate-500 hover:text-rose-500 transition-all"><i data-lucide="log-out" className="w-5 h-5"></i></button>
+                            <button onClick={()=>setLoggedUser(null)} className="text-slate-500 hover:text-rose-500 transition-all"><i data-lucide="log-out" className="w-4 h-4"></i></button>
                         </div>
                     </aside>
 
-                    <main className="flex-1 p-10 overflow-y-auto custom-scrollbar bg-slate-50">
-                        <header className="mb-10 flex justify-between items-end border-b pb-8 border-slate-200 animate-in">
-                            <div className="text-left">
-                                <h1 className="text-5xl font-black italic tracking-tighter uppercase text-slate-800 leading-none">
-                                    {activeTab === 'dashboard' ? 'Dirección Ejecutiva' : activeTab.toUpperCase()}
+                    <main className="flex-1 p-10 overflow-y-auto custom-scrollbar">
+                        <header className="mb-10 flex justify-between items-end border-b border-white/5 pb-8 animate-in text-left">
+                            <div>
+                                <h1 className="text-5xl font-black italic tracking-tighter uppercase text-white leading-none">
+                                    {activeTab === 'dashboard' ? 'Métricas Globales' : activeTab.toUpperCase()}
                                 </h1>
-                                <p className="text-slate-400 font-bold uppercase text-[11px] tracking-[0.4em] mt-4 italic flex items-center">
-                                    <i data-lucide="shield-check" className="w-4 h-4 mr-2 text-blue-600"></i> FPIMENTEL SEGUROS | {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-4 italic flex items-center">
+                                    <i data-lucide="shield-check" className="w-3 h-3 mr-2 text-blue-500"></i> Fpimentel Elite | {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
                                 </p>
                             </div>
-                            <button onClick={() => setShowModal(true)} className="bg-slate-900 text-white px-10 py-5 rounded-[1.5rem] font-black flex items-center gap-4 shadow-2xl hover:bg-blue-600 transition-all text-xs tracking-[0.2em] group border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">
+                            <button onClick={() => setShowModal(true)} className="bg-blue-600 text-white px-10 py-5 rounded-[1.5rem] font-black flex items-center gap-3 shadow-2xl hover:bg-blue-500 transition-all text-[11px] tracking-[0.2em] active:scale-95 group btn-glow">
                                 <i data-lucide="plus-circle" className="w-5 h-5 group-hover:rotate-90 transition-all"></i> NUEVO REGISTRO
                             </button>
                         </header>
@@ -255,118 +246,69 @@
                         {activeTab === 'dashboard' && (
                             <div className="space-y-12 animate-in text-left">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-blue-600 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Pólizas Activas</p><p className="text-6xl font-black tracking-tighter italic leading-none">{policies.length}</p></div>
-                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-rose-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Vencimientos</p><p className="text-6xl font-black tracking-tighter text-rose-600 italic leading-none">1</p></div>
-                                    <div className="bg-[#0f172a] p-8 rounded-[2rem] border-l-[10px] border-l-blue-400 shadow-2xl text-white"><p className="text-[10px] font-black text-blue-300 uppercase mb-2 italic text-blue-400">Mensualidad RD$</p><p className="text-5xl font-black tracking-tighter italic font-mono text-emerald-400 leading-none">${stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
-                                    <div className="bg-white p-8 rounded-[2rem] border-l-[10px] border-l-emerald-500 shadow-xl"><p className="text-[10px] font-black text-slate-400 uppercase mb-2 italic">Cartera Anual</p><p className="text-4xl font-black text-slate-800 italic font-mono leading-none">${stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
+                                    <div className="executive-card p-8 border-l-[12px] border-l-blue-600"><p className="text-[10px] font-black text-slate-500 uppercase mb-2 italic tracking-widest">Pólizas Activas</p><p className="text-6xl font-black tracking-tighter italic text-white leading-none">{policies.length}</p></div>
+                                    <div className="executive-card p-8 border-l-[12px] border-l-amber-500"><p className="text-[10px] font-black text-slate-500 uppercase mb-2 italic tracking-widest">Leads Activos</p><p className="text-6xl font-black tracking-tighter italic text-white leading-none">{leads.length}</p></div>
+                                    <div className="executive-card p-8 border-l-[12px] border-l-emerald-600"><p className="text-[10px] font-black text-slate-500 uppercase mb-2 italic tracking-widest">Mensualidad Proy.</p><p className="text-4xl font-black tracking-tighter italic text-emerald-400 leading-none">${stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
+                                    <div className="executive-card p-8 border-l-[12px] border-l-blue-400"><p className="text-[10px] font-black text-slate-500 uppercase mb-2 italic tracking-widest">Total Anual</p><p className="text-4xl font-black text-blue-300 italic leading-none">${stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits: 0})}</p></div>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                                    <div className="lg:col-span-2 bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden relative">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
-                                        <h3 className="font-black italic uppercase tracking-widest text-lg mb-10 text-slate-800 flex justify-between items-center border-b pb-6">
-                                            <span>Ranking: Top 5 Comisiones</span>
-                                            <i data-lucide="award" className="text-amber-500 w-8 h-8"></i>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 text-left">
+                                    <div className="lg:col-span-2 executive-card p-12 overflow-hidden relative">
+                                        <h3 className="font-black italic uppercase tracking-[0.2em] text-sm mb-10 text-white flex justify-between items-center border-b border-white/5 pb-8">
+                                            <span>Ranking: Mayores Liquidaciones</span>
+                                            <i data-lucide="crown" className="text-amber-500 w-8 h-8"></i>
                                         </h3>
                                         <div className="space-y-6">
                                             {stats.top5.map((p, i) => (
-                                                <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl hover:bg-white hover:shadow-2xl hover:border-blue-200 border-2 border-transparent transition-all group cursor-pointer">
-                                                    <div className="flex items-center gap-8">
-                                                        <span className="text-3xl font-black italic text-slate-200 group-hover:text-blue-600 transition-colors">#0{i+1}</span>
-                                                        <div>
-                                                            <p className="font-black text-slate-800 uppercase italic text-lg leading-none mb-1">{p.client}</p>
-                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">{p.branch} • Humano {p.rate}%</p>
-                                                        </div>
+                                                <div key={i} className="flex items-center justify-between p-6 bg-slate-900/30 rounded-[2rem] hover:bg-slate-800 border border-transparent hover:border-blue-500/30 group transition-all">
+                                                    <div className="flex items-center gap-8 text-left">
+                                                        <span className="text-3xl font-black italic text-slate-800 group-hover:text-blue-600 transition-colors">#0{i+1}</span>
+                                                        <div><p className="font-black text-white uppercase italic text-lg leading-none mb-1">{p.client}</p><p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{p.branch} • Tasa {p.rate}%</p></div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="font-black text-emerald-600 font-mono text-2xl leading-none italic mb-1">$RD {p.commValue.toLocaleString()}</p>
-                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Liquidación Anual</p>
+                                                        <p className="font-black text-emerald-500 font-mono text-2xl italic leading-none">$RD {p.commValue.toLocaleString()}</p>
+                                                        <p className="text-[9px] font-black text-slate-600 uppercase mt-2 tracking-widest">Liquidación Estimada</p>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 text-center flex flex-col justify-center">
-                                        <h3 className="font-black italic uppercase tracking-widest text-xs mb-10 text-slate-400">Mix de Cartera Activa</h3>
+                                    <div className="executive-card p-12 text-center flex flex-col justify-center">
+                                        <h3 className="font-black italic uppercase tracking-widest text-[10px] mb-10 text-slate-500">Volumen por Segmento</h3>
                                         <div className="chart-container"><canvas id="dashChart"></canvas></div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- FINANZAS (Gráficos) --- */}
+                        {/* --- FINANZAS --- */}
                         {activeTab === 'finanzas' && (
                             <div className="space-y-12 animate-in text-left">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border-t-[12px] border-t-blue-600">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 italic underline decoration-blue-200 underline-offset-8">Comisión Mensual</p>
-                                        <p className="text-6xl font-black italic tracking-tighter text-blue-600 font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:0})}</p>
-                                    </div>
-                                    <div className="bg-[#0f172a] p-12 rounded-[3rem] shadow-2xl text-white border-t-[12px] border-t-emerald-500">
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3 italic underline decoration-emerald-900 underline-offset-8">Cartera Anual Total</p>
-                                        <p className="text-6xl font-black italic tracking-tighter font-mono text-white leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:0})}</p>
-                                    </div>
-                                    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col justify-center relative overflow-hidden">
-                                        <h3 className="font-black italic uppercase tracking-widest text-[10px] mb-8 text-slate-400 text-center uppercase">Volumen por Ramo</h3>
-                                        <div className="chart-container"><canvas id="financeChart"></canvas></div>
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                                    <div className="executive-card p-12 border-t-[12px] border-t-blue-600"><p className="text-[10px] font-black text-slate-500 uppercase mb-4 italic tracking-widest underline underline-offset-8 decoration-blue-900">Ingreso Mensual</p><p className="text-6xl font-black italic tracking-tighter text-blue-400 font-mono leading-none">$RD {stats.breakdown.Mensual.toLocaleString(undefined, {minimumFractionDigits:2})}</p></div>
+                                    <div className="executive-card p-12 border-t-[12px] border-t-emerald-600"><p className="text-[10px] font-black text-slate-500 uppercase mb-4 italic tracking-widest underline underline-offset-8 decoration-emerald-900">Cartera Total</p><p className="text-6xl font-black italic tracking-tighter text-emerald-500 font-mono leading-none">$RD {stats.breakdown.Total.toLocaleString(undefined, {minimumFractionDigits:2})}</p></div>
+                                    <div className="executive-card p-12 flex flex-col justify-center relative overflow-hidden"><h3 className="font-black italic uppercase tracking-widest text-[9px] mb-6 text-slate-500 text-center italic leading-none">Rendimiento Ramos</h3><div className="chart-container"><canvas id="financeChart"></canvas></div></div>
                                 </div>
                             </div>
                         )}
 
-                        {/* --- LEADS --- */}
-                        {activeTab === 'leads' && (
-                            <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in border border-slate-100 text-left">
-                                <div className="p-10 border-b bg-slate-50/50 flex justify-between items-center italic">
-                                    <h3 className="font-black italic uppercase tracking-widest text-2xl text-slate-800">Oportunidades de Venta</h3>
-                                    <span className="bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase italic shadow-2xl">{leads.length} prospectos</span>
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">
-                                            <tr><th className="p-10 text-center">Prospecto</th><th className="p-10 text-center">Interés</th><th className="p-10 text-center">Estado</th><th className="p-10 text-right">Contacto</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm italic">
-                                            {leads.map(l => (
-                                                <tr key={l.id} className="hover:bg-blue-50/20 transition-all group">
-                                                    <td className="p-10 font-black text-slate-800 uppercase italic text-lg leading-none">
-                                                        {l.name}
-                                                        <p className="text-[10px] text-slate-300 font-bold mt-2 not-italic uppercase tracking-widest">Desde: {l.date}</p>
-                                                    </td>
-                                                    <td className="p-10 text-center"><span className="bg-blue-50 text-blue-600 px-5 py-2 rounded-full text-[10px] font-black uppercase italic shadow-sm">{l.branch}</span></td>
-                                                    <td className="p-10 text-center">
-                                                        <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase italic ${l.status==='Perdido'?'bg-rose-100 text-rose-500':'bg-amber-100 text-amber-600'}`}>{l.status}</span>
-                                                    </td>
-                                                    <td className="p-10 text-right">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-md italic flex items-center gap-3 ml-auto transform active:scale-95">
-                                                            <i data-lucide="message-circle" className="w-4 h-4"></i> WhatsApp
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- PIPELINE CON PERDIDOS --- */}
+                        {/* --- PIPELINE --- */}
                         {activeTab === 'pipeline' && (
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 animate-in text-left">
                                 {["Nuevos", "Propuesta", "Ganados", "Perdidos"].map((status) => (
-                                    <div key={status} className="flex flex-col gap-8">
-                                        <h4 className={`font-black italic uppercase tracking-[0.3em] text-xs px-6 py-3 rounded-2xl flex justify-between shadow-inner ${status==='Perdidos'?'bg-rose-50 text-rose-500':'bg-slate-100 text-slate-400'}`}>
+                                    <div key={status} className="flex flex-col gap-8 text-left">
+                                        <h4 className={`font-black italic uppercase tracking-[0.3em] text-[11px] px-6 py-4 rounded-2xl flex justify-between shadow-inner ${status==='Perdidos'?'bg-rose-950/20 text-rose-500 border border-rose-500/20':'bg-slate-900 text-slate-500'}`}>
                                             <span>{status}</span>
-                                            <span className="font-bold">{leads.filter(l=> (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).length}</span>
+                                            <span className="text-blue-500">{leads.filter(l=> (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).length}</span>
                                         </h4>
-                                        <div className="kanban-col custom-scrollbar overflow-y-auto border-t-8 border-t-blue-500/10">
+                                        <div className="kanban-col custom-scrollbar overflow-y-auto shadow-inner">
                                             {leads.filter(l => (status === 'Nuevos' && l.status === 'Nuevo') || (status === 'Propuesta' && l.status === 'Propuesta') || (l.status === status)).map(l => (
-                                                <div key={l.id} className={`bg-white p-8 rounded-[2.5rem] shadow-xl border-b-8 mb-6 hover:border-blue-500 transition-all group cursor-move ${status==='Perdidos'?'border-rose-300':'border-slate-100'}`}>
-                                                    <p className="font-black text-slate-800 text-base italic uppercase mb-2 leading-tight">{l.name}</p>
-                                                    <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-6 italic underline underline-offset-4 decoration-blue-100">{l.branch}</p>
+                                                <div key={l.id} className={`bg-[#1e293b] p-8 rounded-[2.5rem] shadow-2xl border-b-[8px] mb-8 hover:border-blue-500 transition-all group cursor-move ${status==='Perdidos'?'border-rose-900/50':'border-slate-800'}`}>
+                                                    <p className="font-black text-white text-base italic uppercase mb-2 leading-none">{l.name}</p>
+                                                    <p className="text-[10px] font-bold text-blue-500 uppercase mb-6 italic tracking-widest">{l.branch}</p>
                                                     <div className="flex gap-3">
-                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-50 text-emerald-600 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-600 hover:text-white transition-all shadow-md italic">WA</button>
-                                                        <button className="bg-slate-50 text-slate-400 p-3 rounded-2xl hover:bg-slate-900 hover:text-white transition-all"><i data-lucide="more-horizontal" className="w-5 h-5"></i></button>
+                                                        <button onClick={()=>triggerWA('lead', l)} className="flex-1 bg-emerald-600/20 text-emerald-400 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-md italic">WhatsApp</button>
+                                                        <button className="bg-slate-950 text-slate-600 p-3 rounded-2xl hover:text-blue-400 transition-all"><i data-lucide="arrow-right-circle" className="w-5 h-5"></i></button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -376,133 +318,42 @@
                             </div>
                         )}
 
-                        {/* --- AJUSTES (ESTABLE) --- */}
-                        {activeTab === 'config' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in text-left">
-                                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100">
-                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b pb-8 text-blue-600 flex justify-between items-center italic">
-                                        <span>Ramos Humano Seguros</span>
-                                        <i data-lucide="percent" className="text-blue-200 w-10 h-10"></i>
-                                    </h3>
-                                    <div className="space-y-4 mb-12 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar">
-                                        {branches && branches.map((b, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-6 bg-slate-50 rounded-3xl group border-2 border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-700 italic">{b.name}</span>
-                                                <div className="flex items-center gap-3">
-                                                    <input value={b.commission} type="number" step="0.1" className="w-20 p-3 rounded-2xl text-center font-black text-blue-600 text-lg bg-white border-2 border-slate-100 outline-none shadow-inner transition-all focus:ring-8 focus:ring-blue-50" 
-                                                        onChange={(e) => {
-                                                            const val = parseFloat(e.target.value) || 0;
-                                                            setBranches(branches.map((item, i) => i === idx ? { ...item, commission: val } : item));
-                                                        }} 
-                                                    />
-                                                    <span className="text-xs font-black text-slate-300">%</span>
-                                                    <button onClick={()=>setBranches(branches.filter((_, i) => i !== idx))} className="text-slate-200 hover:text-rose-500 ml-4 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <form onSubmit={(e)=>{
-                                        e.preventDefault();
-                                        const fd = new FormData(e.target);
-                                        const bname = fd.get('b_name');
-                                        const bcomm = parseFloat(fd.get('b_comm'));
-                                        if(bname && !isNaN(bcomm)) {
-                                            setBranches([...branches, { name: bname, commission: bcomm }]);
-                                            e.target.reset();
-                                        }
-                                    }} className="space-y-6 pt-10 border-t border-dashed">
-                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 italic text-center">Registrar Nuevo Ramo</p>
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <input name="b_name" required placeholder="Nombre (Ej: Vida)" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:ring-8 focus:ring-blue-50 transition-all" />
-                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Comisión" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-blue-50 transition-all" />
-                                        </div>
-                                        <button type="submit" className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 transition-all shadow-2xl active:translate-y-1">ACTUALIZAR TARIFARIO</button>
-                                    </form>
-                                </div>
-
-                                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 text-left">
-                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b pb-8 text-emerald-600 flex justify-between items-center italic">
-                                        <span>Accesos del Equipo</span>
-                                        <i data-lucide="user-cog" className="text-emerald-100 w-10 h-10"></i>
-                                    </h3>
-                                    <div className="space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar">
-                                        {users && users.map((u, i) => (
-                                            <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-[2.5rem] group border-2 border-transparent hover:border-emerald-100 hover:bg-white transition-all">
-                                                <div className="flex items-center gap-6 text-left leading-none">
-                                                    <div className="w-14 h-14 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-3xl shadow-xl uppercase text-xl border-4 border-slate-200">{u.avatar}</div>
-                                                    <div>
-                                                        <p className="font-black text-slate-800 text-lg uppercase italic mb-1 leading-none">{u.name}</p>
-                                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic leading-none">{u.role}</p>
-                                                    </div>
-                                                </div>
-                                                <button onClick={() => u.id !== 'u1' && setUsers(users.filter(x => x.id !== u.id))} className={`text-slate-200 ${u.id==='u1'?'opacity-0':'hover:text-rose-500 opacity-0 group-hover:opacity-100'} transition-all`}><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <form onSubmit={(e)=>{
-                                        e.preventDefault();
-                                        const fd = new FormData(e.target);
-                                        const uname = fd.get('u_name');
-                                        const ulog = fd.get('u_log');
-                                        const upass = fd.get('u_pass');
-                                        if(uname && ulog && upass) {
-                                            setUsers([...users, { id: 'u'+Date.now(), username: ulog, name: uname, role: fd.get('u_role'), avatar: uname.charAt(0).toUpperCase(), pass: upass }]);
-                                            e.target.reset();
-                                        }
-                                    }} className="space-y-6 pt-10 border-t border-dashed text-left leading-none">
-                                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 italic text-center">Registrar Nuevo Colaborador</p>
-                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black uppercase outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <input name="u_log" required placeholder="ID Usuario" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
-                                            <select name="u_role" className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase outline-none italic transition-all shadow-sm">
-                                                <option>Ejecutiva</option>
-                                                <option>Gerente</option>
-                                                <option>Admin</option>
-                                            </select>
-                                        </div>
-                                        <input name="u_pass" type="password" required placeholder="Clave Temporal" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black outline-none focus:ring-8 focus:ring-emerald-50 transition-all shadow-sm" />
-                                        <button type="submit" className="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-emerald-500/20 active:translate-y-1 transition-all">HABILITAR ACCESO</button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- CARTERA (Con Comisiones Detalladas) --- */}
+                        {/* --- CARTERA ELITE --- */}
                         {activeTab === 'cartera' && (
-                            <div className="bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-in border border-slate-100 text-left">
-                                <div className="p-12 border-b bg-slate-900 text-white flex justify-between items-center italic">
-                                    <h3 className="font-black italic uppercase tracking-widest text-2xl">Inventario en Vigor</h3>
+                            <div className="executive-card overflow-hidden animate-in">
+                                <div className="p-12 border-b border-white/5 bg-[#020617] text-white flex justify-between items-center italic">
+                                    <h3 className="font-black italic uppercase tracking-[0.2em] text-2xl">Inventario de Gestión</h3>
                                     <span className="bg-blue-600 text-white px-8 py-3 rounded-full text-xs font-black uppercase italic shadow-2xl">{policies.length} pólizas</span>
                                 </div>
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto text-left">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">
+                                        <thead className="bg-slate-900 text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">
                                             <tr>
                                                 <th className="p-10">Asegurado</th>
                                                 <th className="p-10 text-center">Ramo</th>
                                                 <th className="p-10 text-center">Prima ($RD)</th>
                                                 <th className="p-10 text-center">% Com.</th>
-                                                <th className="p-10 text-right">Comisión ($RD)</th>
+                                                <th className="p-10 text-right">Ganancia ($RD)</th>
                                                 <th className="p-10 text-right">Acción</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm italic">
+                                        <tbody className="divide-y divide-white/5 text-sm italic text-slate-400">
                                             {policies.map(p => {
                                                 const rate = branches.find(b => b.name === p.branch)?.commission || 10;
                                                 const comm = (p.premium * rate) / 100;
                                                 return (
-                                                    <tr key={p.id} className="hover:bg-blue-50/30 transition-all group">
-                                                        <td className="p-10 font-black text-slate-800 uppercase italic text-lg leading-none">
+                                                    <tr key={p.id} className="table-row-hover transition-all group">
+                                                        <td className="p-10 font-black uppercase italic text-lg text-white leading-none">
                                                             {p.client}
-                                                            <p className="text-[10px] text-slate-300 font-bold mt-2 not-italic uppercase tracking-widest leading-none italic">{p.phone}</p>
+                                                            <p className="text-[10px] text-slate-600 font-bold mt-2 not-italic uppercase tracking-widest">{p.phone}</p>
                                                         </td>
-                                                        <td className="p-10 text-center"><span className="bg-blue-50 text-blue-600 px-6 py-2 rounded-full text-[10px] font-black uppercase italic shadow-sm">{p.branch}</span></td>
-                                                        <td className="p-10 text-center font-mono font-black text-slate-800 italic text-lg leading-none tracking-tighter">${p.premium.toLocaleString()}</td>
-                                                        <td className="p-10 text-center font-black text-blue-500 italic uppercase leading-none">{rate}%</td>
-                                                        <td className="p-10 text-right font-black text-emerald-600 font-mono italic text-lg leading-none tracking-tighter">${comm.toLocaleString()}</td>
-                                                        <td className="p-10 text-right">
-                                                            <button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-50 text-rose-500 p-4 rounded-3xl hover:bg-rose-600 hover:text-white transition-all shadow-xl active:scale-95">
-                                                                <i data-lucide="refresh-cw" className="w-5 h-5"></i>
+                                                        <td className="p-10 text-center"><span className="bg-blue-900/30 text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-full text-[9px] font-black uppercase shadow-sm leading-none italic">{p.branch}</span></td>
+                                                        <td className="p-10 text-center font-mono font-black text-slate-300 italic text-lg leading-none tracking-tighter">${p.premium.toLocaleString()}</td>
+                                                        <td className="p-10 text-center font-black text-blue-500 italic text-lg leading-none">{rate}%</td>
+                                                        <td className="p-10 text-right font-black text-emerald-500 font-mono italic text-lg leading-none tracking-tighter">${comm.toLocaleString()}</td>
+                                                        <td className="p-10 text-right leading-none">
+                                                            <button onClick={()=>triggerWA('renovacion', p)} className="bg-rose-900/20 text-rose-500 border border-rose-500/10 p-5 rounded-3xl hover:bg-rose-600 hover:text-white transition-all shadow-md active:scale-95 leading-none">
+                                                                <i data-lucide="refresh-ccw" className="w-5 h-5"></i>
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -510,6 +361,129 @@
                                             })}
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* --- CONFIGURACIÓN ESTABLE --- */}
+                        {activeTab === 'config' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in text-left">
+                                <div className="executive-card p-12">
+                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b border-white/5 pb-8 text-blue-400 flex justify-between items-center italic leading-none">
+                                        <span>Tarifas Humano</span>
+                                        <i data-lucide="percent-circle" className="text-blue-900 w-10 h-10"></i>
+                                    </h3>
+                                    <div className="space-y-4 mb-10 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar text-left">
+                                        {branches.map((b, idx) => (
+                                            <div key={idx} className="flex justify-between items-center p-6 bg-slate-900/50 rounded-3xl group border border-transparent hover:border-blue-500/30 hover:bg-slate-800 transition-all">
+                                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 italic">{b.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <input value={b.commission} type="number" step="0.1" className="w-20 p-3 rounded-2xl text-center font-black text-blue-400 text-lg bg-slate-950 border border-white/5 outline-none focus:ring-4 focus:ring-blue-500/20 transition-all" 
+                                                        onChange={(e) => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            setBranches(branches.map((item, i) => i === idx ? { ...item, commission: val } : item));
+                                                        }} 
+                                                    />
+                                                    <span className="text-xs font-black text-slate-700">%</span>
+                                                    <button onClick={()=>setBranches(branches.filter((_, i) => i !== idx))} className="text-slate-800 hover:text-rose-500 ml-4 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <form onSubmit={(e)=>{
+                                        e.preventDefault();
+                                        const fd = new FormData(e.target);
+                                        setBranches([...branches, { name: fd.get('b_name'), commission: parseFloat(fd.get('b_comm')) }]);
+                                        e.target.reset();
+                                    }} className="space-y-6 pt-10 border-t border-white/5 border-dashed">
+                                        <div className="grid grid-cols-2 gap-6 text-left">
+                                            <input name="b_name" required placeholder="Nombre Ramo" className="p-5 bg-slate-950 border border-white/5 rounded-2xl text-xs font-black uppercase outline-none focus:ring-4 focus:ring-blue-500/20 text-white transition-all" />
+                                            <input name="b_comm" type="number" step="0.1" required placeholder="% Com." className="p-5 bg-slate-950 border border-white/5 rounded-2xl text-xs font-black outline-none focus:ring-4 focus:ring-blue-500/20 text-white transition-all" />
+                                        </div>
+                                        <button type="submit" className="w-full bg-slate-900 text-white py-6 rounded-3xl border border-white/10 font-black uppercase text-xs tracking-widest hover:bg-blue-600 transition-all shadow-2xl active:scale-95 italic">AGREGAR RAMO</button>
+                                    </form>
+                                </div>
+
+                                <div className="executive-card p-12 text-left">
+                                    <h3 className="font-black italic uppercase tracking-widest text-xl mb-10 border-b border-white/5 pb-8 text-emerald-500 flex justify-between items-center italic leading-none">
+                                        <span>Equipo de Oficina</span>
+                                        <i data-lucide="shield-plus" className="text-emerald-900 w-10 h-10"></i>
+                                    </h3>
+                                    <div className="space-y-6 mb-12 max-h-[400px] overflow-y-auto pr-6 custom-scrollbar">
+                                        {users.map((u, i) => (
+                                            <div key={i} className="flex items-center justify-between p-6 bg-slate-900/50 rounded-[2.5rem] group border border-transparent hover:border-emerald-500/30 transition-all">
+                                                <div className="flex items-center gap-6 text-left leading-none">
+                                                    <div className="w-14 h-14 bg-slate-950 flex items-center justify-center text-white font-black italic rounded-3xl shadow-xl uppercase text-xl border-4 border-slate-900">{u.avatar}</div>
+                                                    <div>
+                                                        <p className="font-black text-white text-lg uppercase italic mb-1 leading-none">{u.name}</p>
+                                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">{u.role}</p>
+                                                    </div>
+                                                </div>
+                                                {u.id !== 'u1' && <button onClick={() => setUsers(users.filter(x => x.id !== u.id))} className="text-slate-800 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-5 h-5"></i></button>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <form onSubmit={(e)=>{
+                                        e.preventDefault();
+                                        const fd = new FormData(e.target);
+                                        const uname = fd.get('u_name');
+                                        setUsers([...users, { id: 'u'+Date.now(), username: fd.get('u_log'), name: uname, role: fd.get('u_role'), avatar: uname.charAt(0).toUpperCase(), pass: fd.get('u_pass') }]);
+                                        e.target.reset();
+                                    }} className="space-y-6 pt-10 border-t border-white/5 border-dashed text-left">
+                                        <input name="u_name" required placeholder="Nombre Completo" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl text-xs font-black uppercase outline-none focus:ring-4 focus:ring-emerald-500/20 text-white transition-all shadow-inner" />
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <input name="u_log" required placeholder="ID Usuario" className="p-5 bg-slate-950 border border-white/5 rounded-2xl text-xs font-black outline-none focus:ring-4 focus:ring-emerald-500/20 text-white transition-all" />
+                                            <select name="u_role" className="p-5 bg-slate-950 border border-white/5 rounded-2xl text-[10px] font-black uppercase outline-none italic text-slate-500 shadow-inner">
+                                                <option>Ejecutiva</option><option>Gerente</option><option>Admin</option>
+                                            </select>
+                                        </div>
+                                        <input name="u_pass" type="password" required placeholder="Clave Temporal" className="p-5 bg-slate-950 border border-white/5 rounded-2xl text-xs font-black outline-none focus:ring-4 focus:ring-emerald-500/20 text-white transition-all shadow-inner" />
+                                        <button type="submit" className="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-emerald-500/20 active:translate-y-1 transition-all italic leading-none">HABILITAR ACCESO</button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* --- MODAL MAESTRO --- */}
+                        {showModal && (
+                            <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in">
+                                <div className="executive-card w-full max-w-xl p-12 shadow-[0_50px_100px_rgba(0,0,0,0.8)] border-t-[15px] border-t-blue-600 bg-slate-900">
+                                    <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 italic">
+                                        <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Gestión Directiva</h2>
+                                        <button onClick={()=>setShowModal(false)} className="text-slate-600 hover:text-rose-500 transition-all p-2 bg-slate-950 rounded-xl"><i data-lucide="x" className="w-8 h-8"></i></button>
+                                    </div>
+                                    <div className="flex gap-2 mb-10 bg-slate-950 p-2 rounded-2xl">
+                                        {['policy', 'lead', 'contact'].map(type => (
+                                            <button key={type} onClick={()=>setModalType(type)} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${modalType===type?'bg-blue-600 text-white shadow-xl':'text-slate-600'}`}>
+                                                {type === 'policy' ? 'Póliza' : type === 'lead' ? 'Prospecto' : 'Contacto'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <form onSubmit={handleNewRecord} className="space-y-6 text-left">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Nombre / Entidad</label><input name="client" required className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-500/30 text-white transition-all shadow-inner" /></div>
+                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Teléfono WA</label><input name="phone" required placeholder="809XXXXXXX" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-bold text-sm focus:ring-4 focus:ring-blue-500/30 text-white transition-all shadow-inner" /></div>
+                                            
+                                            {modalType === 'contact' ? (
+                                                <div className="col-span-2 space-y-4">
+                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Correo</label><input name="email" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-bold text-sm text-white" /></div>
+                                                    <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Notas</label><input name="notes" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-bold text-sm text-white" /></div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="space-y-1 text-left"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Ramo Humano</label><select name="branch" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-black uppercase text-xs text-blue-400 italic shadow-inner">{branches.map(b=><option key={b.name} value={b.name}>{b.name}</option>)}</select></div>
+                                                    {modalType === 'policy' && (
+                                                        <>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Prima Bruta</label><input name="premium" type="number" step="0.01" required className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-bold text-sm text-emerald-400 shadow-inner" /></div>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Ciclo Pago</label><select name="freq" className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-black uppercase text-xs italic text-slate-400"><option>Mensual</option><option>Trimestral</option><option>Anual</option></select></div>
+                                                            <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic leading-none">Vencimiento</label><input name="expiry" type="date" required className="w-full p-5 bg-slate-950 border border-white/5 rounded-2xl outline-none font-black text-sm text-white shadow-inner" /></div>
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black uppercase tracking-[0.3em] shadow-2xl shadow-blue-500/30 hover:bg-blue-500 transition-all mt-6 active:scale-95 italic btn-glow">Finalizar Operación</button>
+                                    </form>
                                 </div>
                             </div>
                         )}
